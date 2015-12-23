@@ -68,7 +68,7 @@ GProcessor::GProcessor(GMemorySystem *gm, CPU_t i, size_t numFlows)
   // osSim should be already initialized
   I(osSim);
   osSim->registerProc(this);
-
+	printf("Xu************%d\n",this->getId());
   SescConf->isInt("cpucore", "issueWidth",i);
   SescConf->isLT("cpucore", "issueWidth", 1025,i); // no longer than uint16_t
 

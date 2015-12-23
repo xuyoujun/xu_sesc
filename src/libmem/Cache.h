@@ -318,6 +318,10 @@ public:
   //used by SVCache
   virtual void ckpRestart(uint32_t ckpId) {}
   virtual void ckpCommit(uint32_t ckpId) {}
+
+  /*add by  xu***************************************************/
+  virtual void xuGetStatsData(statsData *data); 
+  /****************************************************/
 };
 
 class WBCache : public Cache {

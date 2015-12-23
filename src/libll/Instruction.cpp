@@ -119,6 +119,7 @@ void Instruction::initialize(int32_t argc
 #elif (defined MIPS_EMUL)
   emulInit(argc, argv, envp);
 #else
+//printf("NO Defined MIPS_EMUL\n"); //add by xu
   initializeMINT(argc, argv, envp);
 #endif
 }  

@@ -195,7 +195,6 @@ double GStatsEnergy::getTotalProc(int32_t procId)
   double total=0;
 
   I((uint32_t)procId < eProcStore.size());
-
   for(size_t i=0;i<eProcStore[procId].size();i++) {
     GStatsEnergy *e = eProcStore[procId][i];
     total += e->getDouble();

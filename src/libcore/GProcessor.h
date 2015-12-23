@@ -159,7 +159,7 @@ public:
   //Lock counters
   GStatsCntr nLocks;
   GStatsCntr nLockContCycles;
-
+  
   virtual ~GProcessor();
   CPU_t getId() const { return Id; }
 
@@ -241,8 +241,10 @@ public:
   virtual void setStallUntil(Time_t t) { stallUntil = t; }
   virtual bool isStall() const { return (stallUntil >= globalClock); }
 #endif
-
-  
+  /*******************add by xu  : aim : get the number of instruction ***************************************/
+  virtual GStatsCntr **xuGetNInst() { return NULL;}
+  bool getInOrderCore(){return InOrderCore;}
+  /***************************************************************/
 };
 
 #endif   // GPROCESSOR_H

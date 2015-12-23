@@ -12,6 +12,7 @@
                   Paul Sack
                   Karin Strauss
 
+
 This file is part of SESC.
 
 SESC is free software; you can redistribute it and/or modify it under the terms
@@ -27,6 +28,7 @@ SESC; see the file COPYING.  If not, write to the  Free Software Foundation, 59
 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
+
 #include <ctype.h>
 #include <signal.h>
 #include <sys/time.h>
@@ -35,7 +37,7 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #include <alloca.h>
 #include "icode.h"
 #include "globals.h"
-
+#include <stdio.h>
 #include "SescConf.h"
 #include "Instruction.h"
 #include "GStats.h"
@@ -61,7 +63,7 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 #include "ThreadContext.h"
 #include "OSSim.h"
-
+#include "xuStats.h"
 OSSim   *osSim=0;
 
 #ifdef QEMU_DRIVEN
@@ -72,7 +74,7 @@ extern "C" long long n_inst_start;
 /**********************
  * OSSim
  */
-
+//FILE *pXuFile;
 char *OSSim::benchName=0;
 
 static void sescConfSignal(int32_t sig)
@@ -171,6 +173,10 @@ OSSim::OSSim(int32_t argc, char **argv, char **envp)
   // initialize the energy subsystem
   EnergyMgr::init();
 #endif
+  //**********************************add by xu
+  xuStat = new xuStats("out.txt",SescConf->getRecordSize("","cpucore"));
+  //******************************************************************
+
 }
 
 void OSSim::processParams(int32_t argc, char **argv, char **envp)
@@ -420,11 +426,15 @@ void OSSim::processParams(int32_t argc, char **argv, char **envp)
     if( getenv("REPORTFILE") ) {
       reportFile = strdup(getenv("REPORTFILE"));
     }else{
+	printf("x6 = %s\n",x6);   //add by xu  **********
+	printf("extension = %s\n",extension);   //add by xu  **********
       reportFile = (char *)malloc(30 + 2*(strlen(benchName) + strlen(xtraPat?xtraPat:benchName)));
       if( xtraPat )
         sprintf(reportFile, "sesc_%s_%s.%s", xtraPat, benchName, extension ? extension : x6);
       else
         sprintf(reportFile, "sesc_%s.%s", benchName, extension ? extension : x6);
+	
+	printf("reportFile = %s\n",reportFile);   //add by xu  **********
     }
   }
  
@@ -901,7 +911,7 @@ void OSSim::initBoot()
   // Launch the boot flow
   // -1 is the parent pid
   // 0 is the current thread, and it has no flags
-
+	printf("xu ************* test ProcessID\n");
   eventSpawn(-1,0,0);
 #endif
 

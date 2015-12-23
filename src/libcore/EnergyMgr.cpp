@@ -58,7 +58,17 @@ double EnergyMgr::etop(double energy)
   
 double EnergyMgr::ptoe(double power) 
 {      // Power to Energy
-  double time = globalClock * (1e9/osSim->getFrequency());
+//  double frequency = osSim->getFrequency();
+//  double fenmu = 1e9/frequency2;
+//  double test = 5e9;
+//  printf("globalClock = %lld,frequency = %lf\n",globalClock,frequency);
+//  printf("fenmu = %lf\n",fenmu);
+//  printf("test = %lf\n",test);
+//  printf("test == frequency2 %d\n",test == frequency2 );
+//  printf("frequency2 = %lf \n",frequency2);
+ double time = globalClock * (1e9/osSim->getFrequency());
+//  double time = globalClock * fenmu;//(1e9/frequency);
+//  printf("time = %lf\n",time);
   return power * time;
 }
   

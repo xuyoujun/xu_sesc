@@ -19,7 +19,7 @@
 #ifdef TASKSCALAR
 #include "TaskHandler.h"
 #endif
-
+#include "xuStats.h"
 int32_t main(int32_t argc, char **argv, char **envp)
 { 
 #ifdef TASKSCALAR
@@ -45,6 +45,8 @@ int32_t main(int32_t argc, char **argv, char **envp)
       pr[i] =new Processor(ms[i], i);
   }
 
+//  xuStats xuStat("out.data",nProcs);
+  //xuStat.getStatData(pr[0]);
   osSim->boot();
 
   // Reaches this point only when all the active threads have finished.
