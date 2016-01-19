@@ -53,13 +53,13 @@
  * never migrates.
  *
  */
-
 enum FetchOpType {
   FetchIncOp = 0,
   FetchDecOp,
   FetchSwapOp
 };
 
+typedef int int32_t;
 #define LOCKED    1
 #define UNLOCKED  0
 
@@ -79,7 +79,6 @@ enum FetchOpType {
 #define sesc_lock_init(x) pthread_mutex_init(x,0)
 #define sesc_lock(x)      pthread_mutex_lock(x)
 #define sesc_unlock(x)    pthread_mutex_unlock(x)
-
 #ifdef SESCAPI_NATIVE_IRIX
 #include <sys/pmo.h>
 #include <fetchop.h>

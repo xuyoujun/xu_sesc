@@ -51,9 +51,11 @@ double EnergyMgr::get(const char* name, int32_t procId)
   return enStore->get(name, procId);
 }
 
-double EnergyMgr::etop(double energy) 
+double EnergyMgr::etop(double energy,int cpuId) 
 {     // Energy to Power
-  return (energy/globalClock) * (osSim->getFrequency()/1e9);
+	unsigned long long clock = osSim->getProcessor(cpuId)->getClockTicks();
+  //return (energy/globalClock) * (osSim->getFrequency()/1e9);
+  return (energy/clock) * (osSim->getFrequency()/1e9);   //add by xu
 }
   
 double EnergyMgr::ptoe(double power) 

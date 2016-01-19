@@ -92,12 +92,19 @@ void RunningProcs::workingListAdd(GProcessor *core)
  extern OSSim *osSim;
 void RunningProcs::run()
 {
-	/*******************************************/
-  long long sumInsts = 0;  //add by xu
-  int count = 0;
+/**********************************************************************************************************************/
+  long long *sumInsts = (long long int *)malloc(sizeof(long long) * SescConf->getRecordSize("","cpucore"));  //add by xu
+  memset(sumInsts,0,sizeof(long long) * SescConf->getRecordSize("","cpucore"));  //add by xu
+  int   *count        = (int *)malloc(sizeof(int)* SescConf->getRecordSize("","cpucore"));  //add by xu
+  memset(count,0,sizeof(int) * SescConf->getRecordSize("","cpucore"));  //add by xu
   xuStats  *xuStat = osSim->xuGetStats();
   bool migrated[4] = {false,false,false,false};
- /**************************************************/
+  int currCpuId = 0;
+  int currPId  = 0;
+
+  long long interval = 10000;
+  double delta = 0.05;
+ /***********************************************************************************************************************/
   I(cpuVector.size() > 0 );
 
   IS(currentCPU = 0);
@@ -106,24 +113,13 @@ void RunningProcs::run()
     if ( workingList.empty() ) {
       EventScheduler::advanceClock();
     }
-	printf("xu***************\n");
-	
-	for(int i = 0 ; i < cpuVector.size(); i++){ // add by xu 
-		printf("cpu%d :InOrederCore = %s\n",i,cpuVector[i]->getInOrderCore()?"true":"false");
-	}
 #ifdef TASKSCALAR
     HVersionDomain::tryPropagateSafeTokenAll();
 #endif
     
     while (hasWork()) {
       stayInLoop=true;
-
-//	printf("xu***************\n");
-//	for(int i = 0 ; i < workingList.size(); i++){ // add by xu 
-//		printf("%d ******2\n",workingList[i]->getId());
-//	}
       startProc = 0;
-
       do{
         // Loop duplicated so round-robin fetch starts on different
         // processor each cycle <><>
@@ -134,11 +130,13 @@ void RunningProcs::run()
         currentCPU->advanceClock();   //This function simulate the entire process of pipeline
 		
 //	//**************************************************************************************************** add by xu/
+	currCpuId = currentCPU->getId();
+	currPId = currentCPU->findVictimPid();
 
-	int pId = currentCPU->findVictimPid();
-	sumInsts += currentCPU->getAndClearnGradInsts(pId);
-	if(sumInsts/10000  > count){
-		count ++;
+	sumInsts[currCpuId] += currentCPU->getAndClearnGradInsts(currPId);
+
+	if(sumInsts[currCpuId]/interval  > count[currCpuId]){
+		count[currCpuId] ++;
 		xuStat->getStatData(currentCPU);
 		xuStat->inputToFile(currentCPU);	
 	}
@@ -180,7 +178,6 @@ void RunningProcs::run()
 //	printf("proc->state:%s\n",proc->getState() ==1?"Running":"No Running");
 	/*******************************************************************************************************/
 
-
           }else{
             workingListRemove(workingList[i]);
           }
@@ -189,7 +186,20 @@ void RunningProcs::run()
           if (workingList[i]->hasWork()) {
             currentCPU = workingList[i];
             currentCPU->advanceClock();
-          }else{
+           
+
+/***start*********************************************************************************************************************/	   
+	    currCpuId = currentCPU->getId();                                                                 //add by xu
+	    currPId = currentCPU->findVictimPid();
+	    sumInsts[currCpuId] += currentCPU->getAndClearnGradInsts(currPId);
+	    if(sumInsts[currCpuId]/interval  > count[currCpuId]){
+		count[currCpuId] ++;
+		xuStat->getStatData(currentCPU);
+		xuStat->inputToFile(currentCPU);	
+	   }
+/****end*********************************************************************************************************************/
+          
+	  }else{
             workingListRemove(workingList[i]);
           }
         }
@@ -206,8 +216,12 @@ void RunningProcs::run()
 #endif
     }
   }while(!EventScheduler::empty());
-  
-  
+ /**************************************************************************************************************************/  
+  int nCpus = size();                           //add by xu
+  for(int i = 0; i < nCpus; i++){
+      xuStat->getTotStats(getProcessor(i));
+  } 
+  /***********************************************************************************************************************/
 }
 
 void RunningProcs::makeRunnable(ProcessId *proc)

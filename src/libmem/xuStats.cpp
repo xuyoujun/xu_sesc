@@ -6,15 +6,17 @@
 #include "Processor.h"
 #include "xuStats.h"
 #include "OSSim.h"
-xuStats::xuStats(char *fileName,int nCPUs){
+xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
     this->fileName = fileName;
+    this->totFileName = totFileName;
    /* preData.dl1 = 0;
     preData.il1 = 0;
     preData.l2 = 0;
     preData.bpred = 0;
     preData.energy = 0;
     preData.IPC = 0;*/
-    this->fp = NULL;
+    fp = NULL;
+    totFp = NULL;
     preData  = new statsData[nCPUs];
     thisData = new statsData[nCPUs];
     for(int i = 0; i < nCPUs; i++){
@@ -41,7 +43,7 @@ void xuStats::getStatData(GProcessor *proc){
     
     GStatsCntr **ppnInst = proc->xuGetNInst(); 
     thisData[cpuId].sumInst = 0;
-    for(int i = iOpInvalid; i < MaxInstType; i++){
+    for(int i = iOpInvalid; i < MaxInstType; i++){ //the number of instruction per  type 
 	int temp                 = ppnInst[i]->getValue(); 
 	thisData[cpuId].nInst[i] = temp;
     	thisData[cpuId].sumInst += temp; ///the number of instruction for IPC
@@ -92,7 +94,22 @@ void xuStats::inputToFile(GProcessor *proc){
     double    diffenergy = thisData[cpuId].energy - preData[cpuId].energy;
     double    diffpower  = diffenergy / diffclock*(osSim->getFrequency()/1e9);
     //print to result file
-    fprintf(fp,"%d %lld %lld %lld %lf %lf %lf %lf\n",cpuId,diffdl1,diffil1,diffl2,diffIPC,diffenergy,diffpower,diffIPC/diffpower);
+    fprintf(fp,"%d %lld %lld %lld %lf %lf %lf %lf ",cpuId,diffdl1,diffil1,diffl2,diffIPC,diffenergy,diffpower,diffIPC/diffpower);
+    
+    long long diffiALU  = thisData[cpuId].nInst[iALU] -  preData[cpuId].nInst[iALU]; 
+    long long diffiMult = thisData[cpuId].nInst[iMult] - preData[cpuId].nInst[iMult];  
+    long long diffiDiv  = thisData[cpuId].nInst[iDiv] -  preData[cpuId].nInst[iDiv]; 
+    long long diffiBJ   = thisData[cpuId].nInst[iBJ] -   preData[cpuId].nInst[iBJ]; 
+    long long diffiLoad = thisData[cpuId].nInst[iLoad] - preData[cpuId].nInst[iLoad]; 
+    long long diffiStore= thisData[cpuId].nInst[iStore] -preData[cpuId].nInst[iStore]; 
+    long long difffpALU = thisData[cpuId].nInst[fpALU] - preData[cpuId].nInst[fpALU]; 
+    long long difffpMult= thisData[cpuId].nInst[fpMult]- preData[cpuId].nInst[fpMult]; 
+    long long difffpDiv = thisData[cpuId].nInst[fpDiv] - preData[cpuId].nInst[fpDiv]; 
+    //long long diffiFence= thisData[cpuId].nInst[iFence]; 
+    //long long diffiEvent= thisData[cpuId].nInst[iEvent]; 
+
+
+    fprintf(fp,"    %lld %lld %lld %lld %lld %lld %lld %lld %lld\n",diffiALU,diffiMult,diffiDiv,diffiBJ,diffiLoad,diffiStore,difffpALU,difffpMult,difffpDiv);
     //save to the previous result
     preData[cpuId].dl1   =  thisData[cpuId].dl1;
     preData[cpuId].il1   =  thisData[cpuId].il1;
@@ -106,9 +123,52 @@ void xuStats::inputToFile(GProcessor *proc){
     } // no aim
     fclose(fp);
 }
-void DstasData::getTotStats(GProcessor *prco){
+void xuStats::getTotStats(GProcessor *proc){
 	//get app's whole statistical data 
 	//such as IPC, Power ,IPC/Power etc.
+      int cpuId       = 0;
+      long long clock = 0;
+      double IPC      = 0.0;
+      long long sumInst = 0;
+      if(proc->getClockTicks() > 0){
+	   cpuId = proc->getId();
+   	   clock = proc->getClockTicks();   // clock 
 
-
+           GStatsCntr **ppnInst = proc->xuGetNInst();  //sumInst
+           for(int i = iOpInvalid; i < MaxInstType; i++){
+	   	sumInst += ppnInst[i]->getValue(); 
+	   }
+	   IPC = (double)sumInst / (double)clock;  //IPC
+           const char * procName = SescConf->getCharPtr("","cpucore",cpuId); 
+           double pPower         = EnergyMgr::etop(GStatsEnergy::getTotalProc(cpuId));
+           double maxClockEnergy = EnergyMgr::get(procName,"clockEnergy",cpuId);
+           double maxEnergy      = EnergyMgr::get(procName,"totEnergy");
+    // More reasonable clock energy. 50% is based on activity, 50% of the clock
+    // distributtion is there all the time
+           double clockPower     = 0.5 * (maxClockEnergy/maxEnergy) * pPower + 0.5 * maxClockEnergy;
+           double corePower      = pPower + clockPower;      //energy
+           double coreEnergy     = EnergyMgr::ptoe(corePower);   //power
+   	     
+           totFp = fopen(totFileName,"a+");
+           if(NULL == totFp){
+    	         printf("Can't open file : %s\n",fileName);
+	          exit(-1);
+            }
+	   fprintf(totFp,"%d %lf %lf %lf %lf\n",cpuId,IPC,corePower,coreEnergy,IPC/corePower);
+      	   fclose(totFp);
+       }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

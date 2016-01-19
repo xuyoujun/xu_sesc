@@ -174,7 +174,7 @@ OSSim::OSSim(int32_t argc, char **argv, char **envp)
   EnergyMgr::init();
 #endif
   //**********************************add by xu
-  xuStat = new xuStats("out.txt",SescConf->getRecordSize("","cpucore"));
+  xuStat = new xuStats("out.txt","outTot.txt",SescConf->getRecordSize("","cpucore"));
   //******************************************************************
 
 }
@@ -1092,11 +1092,13 @@ void OSSim::report(const char *str)
   Report::field("OSSim:pseudoreset=%lld",snapshotGlobalClock);
 
 #ifdef SESC_ENERGY
-  const char *procName = SescConf->getCharPtr("","cpucore",0);
+ // const char *procName = SescConf->getCharPtr("","cpucore",0);  //comment by xu
   double totPower      = 0.0;
   double totClockPower = 0.0;
 
   for(size_t i=0;i<cpus.size();i++) {
+
+    const char *procName = SescConf->getCharPtr("","cpucore",i);   //add by xu
     double pPower = EnergyMgr::etop(GStatsEnergy::getTotalProc(i));
 
     double maxClockEnergy = EnergyMgr::get(procName,"clockEnergy",i);

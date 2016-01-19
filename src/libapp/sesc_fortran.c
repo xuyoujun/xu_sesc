@@ -7,7 +7,7 @@ void sesc_f77_simulation_mark__() {
 
 #if (defined DARWIN) || (defined XCC_SPARC) || (defined SPARC)
 // Do nothing
-#else
+//#else    //comment by xu
 
 #include <g2c.h>
 

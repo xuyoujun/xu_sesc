@@ -22,12 +22,14 @@ struct statsData{
 class xuStats{
 	
 private:
+	FILE *totFp;
+	char *totFileName;
 	FILE *fp;
 	char *fileName;
 	struct statsData *preData;
 	struct statsData *thisData;
 public:
-	xuStats(char *fileName,int nCPUs);
+	xuStats(char *fileName,char *totFileName,int nCPUs);
 	void getStatData(GProcessor *proc);
 	void inputToFile(GProcessor *proc);
 	void getTotStats(GProcessor *proc);
