@@ -29,10 +29,10 @@ EnergyStore *EnergyMgr::enStore=0;
 
 void EnergyMgr::init()
 {
-  enStore = new EnergyStore();
 
   int32_t nProcs = SescConf->getRecordSize("","cpucore");
 
+  enStore = new EnergyStore(nProcs);
   // Check area factor, so that it is dump in conf
   for(Pid_t i = 0; i < nProcs; i ++) {
     SescConf->getDouble("cpucore","areaFactor",i);
@@ -51,13 +51,18 @@ double EnergyMgr::get(const char* name, int32_t procId)
   return enStore->get(name, procId);
 }
 
-double EnergyMgr::etop(double energy,int cpuId) 
+//double EnergyMgr::etop(double energy,int cpuId) 
+//{     // Energy to Power
+//	//unsigned long long clock = osSim->id2GProcessor(cpuId)->getClockTicks();
+//  return (energy/globalClock) * (osSim->getFrequency()/1e9);
+ // return (energy/clock) * (osSim->getFrequency()/1e9);   //add by xu
+//}
+double EnergyMgr::etop(double energy) 
 {     // Energy to Power
-	unsigned long long clock = osSim->getProcessor(cpuId)->getClockTicks();
-  //return (energy/globalClock) * (osSim->getFrequency()/1e9);
-  return (energy/clock) * (osSim->getFrequency()/1e9);   //add by xu
-}
-  
+//	unsigned long long clock = osSim->getProcessor(cpuId)->getClockTicks();
+  return (energy/globalClock) * (osSim->getFrequency()/1e9);
+  //return (energy/clock) * (osSim->getFrequency()/1e9);   //add by xu
+}  
 double EnergyMgr::ptoe(double power) 
 {      // Power to Energy
 //  double frequency = osSim->getFrequency();

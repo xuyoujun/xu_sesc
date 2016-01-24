@@ -131,13 +131,13 @@ public:
 
 class EnergyStore {
 private:
-  const char *proc;
+  const char **proc;
 
 public:   
   static const char *getStr(PowerGroup d);
   static const char *getEnergyStr(PowerGroup d);
 
-  EnergyStore();
+  EnergyStore(int n);
   double get(const char *block, const char *name, int32_t procId=0);
   double get(const char *name, int32_t procId=0);
 };
