@@ -1099,6 +1099,7 @@ void OSSim::report(const char *str)
   for(size_t i=0;i<cpus.size();i++) {
 
     const char *procName = SescConf->getCharPtr("","cpucore",i);   //add by xu
+    printf("procName is %s\n",procName);
     double pPower = EnergyMgr::etop(GStatsEnergy::getTotalProc(i));
 
     double maxClockEnergy = EnergyMgr::get(procName,"clockEnergy",i);

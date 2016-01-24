@@ -130,16 +130,23 @@ void RunningProcs::run()
         currentCPU->advanceClock();   //This function simulate the entire process of pipeline
 		
 //	//**************************************************************************************************** add by xu/
-	currCpuId = currentCPU->getId();
-	currPId = currentCPU->findVictimPid();
+	//currCpuId = currentCPU->getId();
+	//currPId = currentCPU->findVictimPid();
 
-	sumInsts[currCpuId] += currentCPU->getAndClearnGradInsts(currPId);
+	//sumInsts[currCpuId] += currentCPU->getAndClearnGradInsts(currPId);
 
-	if(sumInsts[currCpuId]/interval  > count[currCpuId]){
-		count[currCpuId] ++;
-		xuStat->getStatData(currentCPU);
-		xuStat->inputToFile(currentCPU);	
-	}
+	//if(sumInsts[currCpuId]/interval  > count[currCpuId]){
+	//	count[currCpuId] ++;
+	//	xuStat->getStatData(currentCPU);
+	//	xuStat->inputToFile(currentCPU);	
+	//}
+
+
+
+
+
+
+
 
 	//int cpuId = currentCPU->getId();
 	
@@ -189,14 +196,14 @@ void RunningProcs::run()
            
 
 /***start*********************************************************************************************************************/	   
-	    currCpuId = currentCPU->getId();                                                                 //add by xu
-	    currPId = currentCPU->findVictimPid();
-	    sumInsts[currCpuId] += currentCPU->getAndClearnGradInsts(currPId);
-	    if(sumInsts[currCpuId]/interval  > count[currCpuId]){
-		count[currCpuId] ++;
-		xuStat->getStatData(currentCPU);
-		xuStat->inputToFile(currentCPU);	
-	   }
+	//    currCpuId = currentCPU->getId();                                                                 //add by xu
+	  //  currPId = currentCPU->findVictimPid();
+	   // sumInsts[currCpuId] += currentCPU->getAndClearnGradInsts(currPId);
+	  //  if(sumInsts[currCpuId]/interval  > count[currCpuId]){
+	//	count[currCpuId] ++;
+	//	xuStat->getStatData(currentCPU);
+	//	xuStat->inputToFile(currentCPU);	
+	  // }
 /****end*********************************************************************************************************************/
           
 	  }else{
@@ -217,10 +224,10 @@ void RunningProcs::run()
     }
   }while(!EventScheduler::empty());
  /**************************************************************************************************************************/  
-  int nCpus = size();                           //add by xu
-  for(int i = 0; i < nCpus; i++){
-      xuStat->getTotStats(getProcessor(i));
-  } 
+  //int nCpus = size();                           //add by xu
+  //for(int i = 0; i < nCpus; i++){
+  //    xuStat->getTotStats(getProcessor(i));
+ // } 
   /***********************************************************************************************************************/
 }
 

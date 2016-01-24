@@ -361,4 +361,5 @@ typedef CallbackMember4<OSSim, Pid_t, int32_t, int32_t, const void *, &OSSim::po
 
 extern OSSim *osSim;
 extern double etop(double energy);
+//extern double etop(double energy,int cpuId);
 #endif   // OSSim_H
