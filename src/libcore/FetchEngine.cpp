@@ -38,8 +38,8 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #include "XactionManager.h"
 #endif
 
-long long FetchEngine::nInst2Sim=0;
-long long FetchEngine::totalnInst=0;
+//long long FetchEngine::nInst2Sim=0;
+//long long FetchEngine::totalnInst=0;
 
 FetchEngine::FetchEngine(int32_t cId
                          ,int32_t i

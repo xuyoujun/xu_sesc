@@ -5,6 +5,7 @@
    Contributed by Jose Renau
                   Milos Prvulovic
 
+
 This file is part of SESC.
 
 SESC is free software; you can redistribute it and/or modify it under the terms
@@ -31,8 +32,6 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #include "TaskContext.h"
 #endif
 
-#include "xuStats.h"
-#include "OSSim.h"
 RunningProcs::RunningProcs()
 {
   stayInLoop=true;
@@ -89,22 +88,8 @@ void RunningProcs::workingListAdd(GProcessor *core)
   workingList.push_back(core);
 }
 
- extern OSSim *osSim;
 void RunningProcs::run()
 {
-/**********************************************************************************************************************/
-  long long *sumInsts = (long long int *)malloc(sizeof(long long) * SescConf->getRecordSize("","cpucore"));  //add by xu
-  memset(sumInsts,0,sizeof(long long) * SescConf->getRecordSize("","cpucore"));  //add by xu
-  int   *count        = (int *)malloc(sizeof(int)* SescConf->getRecordSize("","cpucore"));  //add by xu
-  memset(count,0,sizeof(int) * SescConf->getRecordSize("","cpucore"));  //add by xu
-  xuStats  *xuStat = osSim->xuGetStats();
-  bool migrated[4] = {false,false,false,false};
-  int currCpuId = 0;
-  int currPId  = 0;
-
-  long long interval = 10000;
-  double delta = 0.05;
- /***********************************************************************************************************************/
   I(cpuVector.size() > 0 );
 
   IS(currentCPU = 0);
@@ -113,78 +98,24 @@ void RunningProcs::run()
     if ( workingList.empty() ) {
       EventScheduler::advanceClock();
     }
+
 #ifdef TASKSCALAR
     HVersionDomain::tryPropagateSafeTokenAll();
 #endif
     
     while (hasWork()) {
       stayInLoop=true;
+
       startProc = 0;
+
       do{
         // Loop duplicated so round-robin fetch starts on different
         // processor each cycle <><>
-	
+
         for(size_t i=startProc ; i < workingList.size() ; i++) {
           if (workingList[i]->hasWork()) {
-    	currentCPU = workingList[i];
-        currentCPU->advanceClock();   //This function simulate the entire process of pipeline
-		
-//	//**************************************************************************************************** add by xu/
-	//currCpuId = currentCPU->getId();
-	//currPId = currentCPU->findVictimPid();
-
-	//sumInsts[currCpuId] += currentCPU->getAndClearnGradInsts(currPId);
-
-	//if(sumInsts[currCpuId]/interval  > count[currCpuId]){
-	//	count[currCpuId] ++;
-	//	xuStat->getStatData(currentCPU);
-	//	xuStat->inputToFile(currentCPU);	
-	//}
-
-
-
-
-
-
-
-
-	//int cpuId = currentCPU->getId();
-	
-//	printf("sumInsts = %ld\n",sumInsts);
-//	ProcessId *proc = ProcessId::getProcessId(pId);
-//	if(!migrated[0]){
-//		migrated[0] = true;
-//		switchOut(0,proc);
-//		switchIn(2,proc);
-//	}
-//	if(!migrated[1] && sumInsts >10000000){
-//		migrated[1] = true;
-//		switchOut(cpuId,proc);
-//		switchIn(2,proc);
-//	}
-//	if(!migrated[2] && sumInsts >15000000){
-//		migrated[2] = true;
-//		switchOut(cpuId,proc);
-//		switchIn(3,proc);
-//	}
-//	printf("proc address : %p\n",proc);
-//	printf("proc getCPU : %d\n",proc->getCPU());
-//	
-//	printf("currentCPU ID : %d\n",currentCPU->getId());
-//	printf("proc->nSwitchs %ld\n",proc->nSwitchs);
-//	long long  nClock = currentCPU->getClockTicks();
-//	printf("Clock Number %ld\n",nClock);
-//	
-//	for(int i = 0 ; i < MaxInstType; i++){
-//
-//		nInstruction += currentCPU->	
-//	}
-//	printf("%ld:\n",proc->getNGradInsts());
-//	if(0 != proc->nGradInsts)	
-//		printf("Xu *********%ld:\n",proc->nGradInsts);
-//	printf("proc->state:%s\n",proc->getState() ==1?"Running":"No Running");
-	/*******************************************************************************************************/
-
+            currentCPU = workingList[i];
+            currentCPU->advanceClock();
           }else{
             workingListRemove(workingList[i]);
           }
@@ -193,20 +124,7 @@ void RunningProcs::run()
           if (workingList[i]->hasWork()) {
             currentCPU = workingList[i];
             currentCPU->advanceClock();
-           
-
-/***start*********************************************************************************************************************/	   
-	//    currCpuId = currentCPU->getId();                                                                 //add by xu
-	  //  currPId = currentCPU->findVictimPid();
-	   // sumInsts[currCpuId] += currentCPU->getAndClearnGradInsts(currPId);
-	  //  if(sumInsts[currCpuId]/interval  > count[currCpuId]){
-	//	count[currCpuId] ++;
-	//	xuStat->getStatData(currentCPU);
-	//	xuStat->inputToFile(currentCPU);	
-	  // }
-/****end*********************************************************************************************************************/
-          
-	  }else{
+          }else{
             workingListRemove(workingList[i]);
           }
         }
@@ -223,12 +141,8 @@ void RunningProcs::run()
 #endif
     }
   }while(!EventScheduler::empty());
- /**************************************************************************************************************************/  
-  //int nCpus = size();                           //add by xu
-  //for(int i = 0; i < nCpus; i++){
-  //    xuStat->getTotStats(getProcessor(i));
- // } 
-  /***********************************************************************************************************************/
+  
+  
 }
 
 void RunningProcs::makeRunnable(ProcessId *proc)
@@ -383,5 +297,7 @@ GProcessor *RunningProcs::getAvailableProcessor(void)
   }
 
   I(availIt != availableProcessors.end());
-  return *availIt; 
+
+  return *availIt;
 }
+

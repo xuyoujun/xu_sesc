@@ -83,6 +83,11 @@ public:
 #ifdef SESC_MISPATH
   void misBranchRestore(DInst *dinst);
 #endif
+
+  FetchEngine *getFetchEngine(){return &IFID;}
+  GStatsCntr **xuGetNInst(){
+  	return nInst;
+  }
 };
 
 #endif   // SPROCESSOR_H

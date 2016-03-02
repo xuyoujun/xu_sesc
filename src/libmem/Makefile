@@ -13,7 +13,7 @@ all: $(OBJ)/mtst1.o $(OBJ)/libmem.a
 ##############################################################################
 OBJS	:= MemorySystem.o Cache.o Bank.o MemCtrl.o Bus.o MemoryOS.o  \
            TLB.o StridePrefetcher.o UglyMemRequest.o AddressPrefetcher.o \
-	   PriorityBus.o
+	   PriorityBus.o xuStats.o
 
 ifdef TS_CAVA
 OBJS	+= MValuePredictor.o

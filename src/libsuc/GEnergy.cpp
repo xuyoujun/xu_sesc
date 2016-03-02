@@ -68,6 +68,8 @@ GStatsEnergy::GStatsEnergy(const char *field, const char *blk
   char cadena[1024];
   sprintf(cadena,"%s:%s", blk, field) ;
   name = strdup(cadena);
+
+  //printf("name = %s  procId = %d  StepEnergy = %lf\n",cadena, procId, energy);
   subscribe();
 }
 
@@ -195,7 +197,6 @@ double GStatsEnergy::getTotalProc(int32_t procId)
   double total=0;
 
   I((uint32_t)procId < eProcStore.size());
-
   for(size_t i=0;i<eProcStore[procId].size();i++) {
     GStatsEnergy *e = eProcStore[procId][i];
     total += e->getDouble();
@@ -297,19 +298,26 @@ void GStatsEnergyCG::add(int32_t v)
 }
 
 // Energy Store functions
-EnergyStore::EnergyStore() 
+EnergyStore::EnergyStore(int n) 
 {
-  proc = SescConf->getCharPtr("","cpucore",0) ;
+  /***************************************************/
+  proc = (const char **)malloc(n * sizeof(char *));
+  for(int i = 0; i < n; i++){
+       proc[i] = SescConf->getCharPtr("","cpucore",i);
+  }
+  /***************************************************************/
+  //     proc = SescConf->getCharPtr("","cpucore",0); //comment by xuyoujun
 }
 
 double EnergyStore::get(const char *name, int32_t procId)
 {
-  return get(proc, name, procId);
+  return get(proc[procId], name, procId);
 }
 
 double EnergyStore::get(const char *block, const char *name, int32_t procId)
 {
-  return SescConf->getDouble(block, name);
+ // printf("block = %s name = %s procId = %d\n",block,name,procId);
+  return SescConf->getDouble(block, name);  
 }
 
 const char* EnergyStore::getStr(PowerGroup p)

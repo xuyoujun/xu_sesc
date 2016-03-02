@@ -38,6 +38,7 @@ private:
 public:
   static void init();
 
+//  static double etop(double energy,int cpuId); 
   static double etop(double energy); 
   
   static double ptoe(double power);

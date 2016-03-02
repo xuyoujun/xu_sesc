@@ -97,6 +97,15 @@ static volatile int nConcurrentThreads=1;
 /* sescapi mapping between native pid (nPid) to internal pid (iPid)
  */
 
+/*struct thread_data
+{
+	int argc;
+	char ** argv;
+	int done;
+};
+typedef void (*xu_f)(void *, void *);
+*/
+
 struct TableField 
 {
   char inUse;
@@ -284,8 +293,7 @@ void *sesc_spawn_wrapper(void *p)
 
   TableFreeEntry((struct TableField *)tempArg);
 
-  tf->routine(tf->arg);
-
+  tf->routine(tf->arg);  //comment by xu
   pthread_mutex_lock(&wait_lock);
   nConcurrentThreads--;
   pthread_mutex_unlock(&wait_lock);
@@ -298,7 +306,6 @@ void *sesc_spawn_wrapper(void *p)
 
   return 0;
 }
-
 
 int sesc_spawn(void (*routine) (void *), void *arg, int flags)
 {
@@ -327,7 +334,6 @@ int sesc_spawn(void (*routine) (void *), void *arg, int flags)
   pthread_mutex_lock(&wait_lock);
   nConcurrentThreads++;
   pthread_mutex_unlock(&wait_lock);
-
   pthread_create( &tf->thr, 0, sesc_spawn_wrapper, tf);
 
   pthread_mutex_lock(&wait_lock);
@@ -344,6 +350,7 @@ int sesc_spawn(void (*routine) (void *), void *arg, int flags)
   pthread_mutex_unlock(&wait_lock);
 
   return (int)tf->thr;
+	return 0;
 }
 
 int sesc_self(void)

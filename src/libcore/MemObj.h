@@ -38,7 +38,7 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #define DEBUGCONDITION 0
 #endif
 #endif
-
+#include "xuStats.h"
 class MemRequest;      // Memory Request (from processor to cache)
 
 class MemObj {
@@ -121,6 +121,15 @@ public:
 
   // Print stats
   virtual void dump() const;
+  
+
+  //add byxu ********************************************************
+  virtual void xuGetStatsData(statsData *data){}
+ 
+
+//  ********************************************************************
+ 
+
 };
 
 class DummyMemObj : public MemObj {

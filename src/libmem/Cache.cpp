@@ -670,6 +670,14 @@ Time_t Cache::getNextFreeCycle() const // TODO: change name to calcNextFreeCycle
 {
   return cachePort->calcNextSlot();
 }
+/**addd by xu*************************************/
+
+void Cache::xuGetStatsData(statsData *data){
+	data->missValue = readMiss.getValue() + writeMiss.getValue();
+}
+
+/**********************************/
+
 
 void Cache::doWriteBack(PAddr addr)
 {

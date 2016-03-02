@@ -55,7 +55,7 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #endif
 
 #include "Events.h"
-
+#include "xuStats.h"
 // Interface that the backend should extend for intercepting the user events. It
 // also must be extended for changing the mapping policies for the threads. For
 // example, SMT and CMP may have different mapping policies.
@@ -112,7 +112,10 @@ private:
 #ifdef TS_RISKLOADPROF
   RiskLoadProf *riskLoadProf;
 #endif
+  /**add by xu**************************************/
+  xuStats *xuStat;
 
+  /************************************************/
 protected:
   StaticCallbackMember0<RunningProcs, &RunningProcs::finishWorkNow> finishWorkNowCB;
 
@@ -132,7 +135,7 @@ public:
 
   bool trace() const { return (traceFile != 0); }
 
-
+  xuStats * xuGetStats(){return xuStat;}
 
 
   virtual void preEvent(Pid_t pid, int32_t vaddr, int32_t type, void *sptr) {
@@ -358,4 +361,5 @@ typedef CallbackMember4<OSSim, Pid_t, int32_t, int32_t, const void *, &OSSim::po
 
 extern OSSim *osSim;
 extern double etop(double energy);
+//extern double etop(double energy,int cpuId);
 #endif   // OSSim_H

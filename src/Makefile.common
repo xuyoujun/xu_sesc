@@ -16,7 +16,8 @@ unexport SRCPAT
 
 ifdef XCC_MIPSEB
 $(OBJ)/mkdep: $(SRC_DIR)/misc/mkdep.cpp $(OBJ)/.placeholder
-	gcc -O2 -o $@ $(SRC_DIR)/misc/mkdep.cpp
+	gcc -O2 -o $@ $(SRC_DIR)/misc/mkdep.cpp -lstdc++
+#-lstdc++ add by xu
 else
 ifdef XCC_SPARC
 $(OBJ)/mkdep: $(SRC_DIR)/misc/mkdep.cpp $(OBJ)/.placeholder

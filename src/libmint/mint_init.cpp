@@ -110,8 +110,11 @@ void mint_init(int32_t argc, char **argv, char **envp)
   ThreadContext::staticConstructor();
 
   next_arg = optind;
+/*********************************************/
+printf("optind = %d\n",optind); //add by xu
   Objname = argv[next_arg];
-  
+ printf("BenchName is :%s\n",Objname); 
+/********************************************/
 #if (defined ADDRESS_SPACES)
   ThreadContext *mainThread=ThreadContext::getMainThreadContext();
   AddressSpace  *addrSpace=new AddressSpace();

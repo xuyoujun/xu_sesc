@@ -51,9 +51,11 @@ class GProcessor;
 class FetchEngine {
 private:
   // Static data
-  static long long nInst2Sim;
-  static long long totalnInst;
+//  static long long nInst2Sim;
+ // static long long totalnInst;
   
+  long long nInst2Sim;
+  long long totalnInst;
   const int32_t Id;
   const int32_t cpuId;
 
@@ -210,8 +212,10 @@ public:
 #endif
     return pid >= 0; 
   }
-
-  static void setnInst2Sim(long long a) {
+ // static void setnInst2Sim(long long a) {  //comment by xu
+  //  nInst2Sim = a;
+ // }
+  void setnInst2Sim(long long a) {  //comment by xu
     nInst2Sim = a;
   }
 };
