@@ -950,8 +950,11 @@ void OSSim::preBoot()
   else{// 0 would never stop 
     nInst2Sim = ((~0ULL) - 1024)/2;
   }
-
-  FetchEngine::setnInst2Sim(nInst2Sim);
+ 
+  int nProcs = getNumCPUs();
+  for(int i = 0 ; i < nProcs; i++){
+    id2GProcessor(i)->getFetchEngine()->setnInst2Sim(nInst2Sim);
+  }
 
 #ifdef QEMU_DRIVEN
   n_inst_stop = nInst2Sim;
