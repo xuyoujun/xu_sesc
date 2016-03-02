@@ -674,6 +674,7 @@ Time_t Cache::getNextFreeCycle() const // TODO: change name to calcNextFreeCycle
 
 void Cache::xuGetStatsData(statsData *data){
 	data->missValue = readMiss.getValue() + writeMiss.getValue();
+	data->hitValue   = readHit.getValue() + writeHit.getValue();
 }
 
 /**********************************/

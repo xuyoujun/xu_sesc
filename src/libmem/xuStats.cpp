@@ -9,6 +9,7 @@
 xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
     this->fileName = fileName;
     this->totFileName = totFileName;
+    pre = false;
    /* preData.dl1 = 0;
     preData.il1 = 0;
     preData.l2 = 0;
@@ -31,7 +32,15 @@ xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
        preData[i].IPC = 0.0;
        preData[i].energyEffiency = 0.0;
     }
+    for(int i = 0; i < xu_nCPU; i++){
+    	for( int j = 0; j < control_NUM; j++){
+	    control_table[i][j] = -1;
+	}
 
+	control_table[i][temp_NUM] = 0;
+    }
+     memset(&phase_table[0][0][0],0,9 * 16 * 4 * sizeof(long long));
+     memset(&phase_Z[0],0,4 * sizeof(long long));
 }
 
 void xuStats::getStatData(GProcessor *proc){
@@ -105,11 +114,73 @@ void xuStats::inputToFile(GProcessor *proc){
     long long difffpALU = thisData[cpuId].nInst[fpALU] - preData[cpuId].nInst[fpALU]; 
     long long difffpMult= thisData[cpuId].nInst[fpMult]- preData[cpuId].nInst[fpMult]; 
     long long difffpDiv = thisData[cpuId].nInst[fpDiv] - preData[cpuId].nInst[fpDiv]; 
+    long long INT =  diffiALU + diffiMult + diffiDiv;
+    long long BJ  = diffiBJ;
+    long long FP  = difffpALU + difffpMult + difffpDiv;
+    long long MEM = diffiStore + diffiLoad;
+    int tempid    = control_table[cpuId][max_ID] + 1;
+    int currentid = control_table[cpuId][current_ID];
+    if(0 == tempid){ // for the first phase
+        if(pre == false ){
+		phase_Z[0] = INT;
+		phase_Z[1] = BJ;
+		phase_Z[2] = FP;
+		phase_Z[3] = MEM;
+		pre = true;
+	}
+	else{
+		if((double)(abs(phase_Z[0] - INT) + abs(phase_Z[1] - BJ) + abs(phase_Z[2] - FP) + abs(phase_Z[3] - MEM))/(double)10000 > 0.075){
+			control_table[cpuId][temp_NUM] = 0;
+			phase_Z[0] = INT;
+			phase_Z[1] = BJ;
+			phase_Z[2] = FP;
+			phase_Z[3] = MEM;
+		}
+		else {
+			if (++control_table[cpuId][temp_NUM] >= 4){	  
+				control_table[cpuId][temp_NUM] = 0;
+				control_table[cpuId][max_ID] = tempid;
+				control_table[cpuId][current_ID] = tempid;
+				phase_table[cpuId][tempid][0] = phase_Z[0];
+				phase_table[cpuId][tempid][1] = phase_Z[1];
+				phase_table[cpuId][tempid][2] = phase_Z[2];
+				phase_table[cpuId][tempid][3] = phase_Z[3];
+			}
+		}
+	}
+    }
+    else{ //other phase
+        double delt = (double)(abs(phase_table[cpuId][currentid][0] - INT) + abs(phase_table[cpuId][currentid][1] - BJ) + abs(phase_table[cpuId][currentid][2] - FP) + abs(phase_table[cpuId][currentid][3] - MEM))/(double)10000; 
+//	printf("%lf\n", delt);
+	if( delt >  0.075){ //may be a new phase  // may a previous phase
+		if(++control_table[cpuId][temp_NUM] >= 4){
+			control_table[cpuId][temp_NUM] = 0;
+			for(int i = 0; i < control_table[cpuId][max_ID]; i++){
+				if((double)(abs(phase_table[cpuId][i][0] - INT) + abs(phase_table[cpuId][i][1] - BJ) + abs(phase_table[cpuId][i][2] - FP) + abs(phase_table[cpuId][i][3] - MEM))/(double)10000 <= 0.075){
+					control_table[cpuId][max_ID]--;
+					tempid = i;
+					break;
+				}
+			}
+			control_table[cpuId][max_ID]++;
+			control_table[cpuId][current_ID] = tempid;
+			phase_table[cpuId][tempid][0] = INT;
+			phase_table[cpuId][tempid][1] = BJ;
+			phase_table[cpuId][tempid][2] = FP;
+			phase_table[cpuId][tempid][3] = MEM;
+
+		}
+	}
+	else{ //is current
+		control_table[cpuId][temp_NUM] = 0;
+	}
+    }
+     
     //long long diffiFence= thisData[cpuId].nInst[iFence]; 
     //long long diffiEvent= thisData[cpuId].nInst[iEvent]; 
 
 
-    fprintf(fp,"    %lld %lld %lld %lld %lld %lld %lld %lld %lld\n",diffiALU,diffiMult,diffiDiv,diffiBJ,diffiLoad,diffiStore,difffpALU,difffpMult,difffpDiv);
+    fprintf(fp,"    %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld\n",diffiALU,diffiMult,diffiDiv,diffiBJ,diffiLoad,diffiStore,difffpALU,difffpMult,difffpDiv,control_table[cpuId][current_ID]);
     //save to the previous result
     preData[cpuId].dl1   =  thisData[cpuId].dl1;
     preData[cpuId].il1   =  thisData[cpuId].il1;
