@@ -41,6 +41,8 @@ xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
     }
      memset(&phase_table[0][0][0],0,9 * 16 * 4 * sizeof(long long));
      memset(&phase_Z[0],0,4 * sizeof(long long));
+     interval = 100000;
+     ITV_diff = 0.050;
 }
 
 void xuStats::getStatData(GProcessor *proc){
@@ -114,10 +116,15 @@ void xuStats::inputToFile(GProcessor *proc){
     long long difffpALU = thisData[cpuId].nInst[fpALU] - preData[cpuId].nInst[fpALU]; 
     long long difffpMult= thisData[cpuId].nInst[fpMult]- preData[cpuId].nInst[fpMult]; 
     long long difffpDiv = thisData[cpuId].nInst[fpDiv] - preData[cpuId].nInst[fpDiv]; 
-    long long INT =  diffiALU + diffiMult + diffiDiv;
+    long long INT = diffiALU + diffiMult + diffiDiv;
     long long BJ  = diffiBJ;
     long long FP  = difffpALU + difffpMult + difffpDiv;
     long long MEM = diffiStore + diffiLoad;
+    long long diffINT;
+    long long diffBJ;
+    long long diffFP;
+    long long diffMEM;
+    double delt;
     int tempid    = control_table[cpuId][max_ID] + 1;
     int currentid = control_table[cpuId][current_ID];
     if(0 == tempid){ // for the first phase
@@ -129,7 +136,12 @@ void xuStats::inputToFile(GProcessor *proc){
 		pre = true;
 	}
 	else{
-		if((double)(abs(phase_Z[0] - INT) + abs(phase_Z[1] - BJ) + abs(phase_Z[2] - FP) + abs(phase_Z[3] - MEM))/(double)10000 > 0.075){
+		diffINT = abs(phase_Z[0] - INT); 
+		diffBJ  = abs(phase_Z[1] - BJ); 
+		diffFP  = abs(phase_Z[2] - FP);
+		diffMEM = abs(phase_Z[3] - MEM);
+		delt = (double)(diffINT + diffBJ + diffFP + diffMEM)/(double)interval;
+		if(delt > ITV_diff){
 			control_table[cpuId][temp_NUM] = 0;
 			phase_Z[0] = INT;
 			phase_Z[1] = BJ;
@@ -150,15 +162,26 @@ void xuStats::inputToFile(GProcessor *proc){
 	}
     }
     else{ //other phase
-        double delt = (double)(abs(phase_table[cpuId][currentid][0] - INT) + abs(phase_table[cpuId][currentid][1] - BJ) + abs(phase_table[cpuId][currentid][2] - FP) + abs(phase_table[cpuId][currentid][3] - MEM))/(double)10000; 
+		diffINT = abs(phase_table[cpuId][currentid][0] - INT); 
+		diffBJ  = abs(phase_table[cpuId][currentid][1] - BJ); 
+		diffFP  = abs(phase_table[cpuId][currentid][2] - FP); 
+		diffMEM = abs(phase_table[cpuId][currentid][3] - MEM); 
+		delt = (double)(diffINT + diffBJ + diffFP + diffMEM)/(double)interval;
 //	printf("%lf\n", delt);
-	if( delt >  0.075){ //may be a new phase  // may a previous phase
-		if(++control_table[cpuId][temp_NUM] >= 4){
+	if( delt >  ITV_diff){ //may be a new phase  // may a previous phase
+		if(++control_table[cpuId][temp_NUM] >= 4){// is another phase
 			control_table[cpuId][temp_NUM] = 0;
-			for(int i = 0; i < control_table[cpuId][max_ID]; i++){
-				if((double)(abs(phase_table[cpuId][i][0] - INT) + abs(phase_table[cpuId][i][1] - BJ) + abs(phase_table[cpuId][i][2] - FP) + abs(phase_table[cpuId][i][3] - MEM))/(double)10000 <= 0.075){
+			for(int i = 0; i <= control_table[cpuId][max_ID]; i++){ //Is previous phase?
+				diffINT = abs(phase_table[cpuId][i][0] - INT); 
+				diffBJ  = abs(phase_table[cpuId][i][1] - BJ); 
+				diffFP  = abs(phase_table[cpuId][i][2] - FP); 
+				diffMEM = abs(phase_table[cpuId][i][3] - MEM); 
+				delt = (double)(diffINT + diffBJ + diffFP + diffMEM)/(double)interval;
+
+				if(delt <= ITV_diff){
 					control_table[cpuId][max_ID]--;
 					tempid = i;
+			//		printf("zhi shaoyiciba\n");
 					break;
 				}
 			}

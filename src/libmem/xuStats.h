@@ -40,6 +40,8 @@ private:
 	long long  phase_Z[4];
 	long long control_table[xu_nCPU][max_ID + 1];
 	long long  phase_table[xu_nCPU][16][4];
+	long long  interval;
+	double     ITV_diff;
 public:
 	xuStats(char *fileName,char *totFileName,int nCPUs);
 	void getStatData(GProcessor *proc);
