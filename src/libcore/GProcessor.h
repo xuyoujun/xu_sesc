@@ -243,6 +243,7 @@ public:
 #endif
   /*******************add by xu  : aim : get the number of instruction ***************************************/
   virtual GStatsCntr **xuGetNInst() { return NULL;}
+  virtual GStatsCntr **xuGetNStall() { return NULL;}
   bool getInOrderCore(){return InOrderCore;}
   virtual FetchEngine *getFetchEngine(){return NULL;}
   /***************************************************************/

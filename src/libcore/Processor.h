@@ -88,6 +88,9 @@ public:
   GStatsCntr **xuGetNInst(){
   	return nInst;
   }
+  GStatsCntr **xuGetNStall(){
+  	return nStall;
+  }
 };
 
 #endif   // SPROCESSOR_H

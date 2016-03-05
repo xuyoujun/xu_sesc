@@ -27,7 +27,7 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #include "nanassert.h"
 
 #include "SescConf.h"
-
+#include "GStats.h"
 #include "ThreadContext.h"
 #include "CacheCore.h"
 
@@ -46,6 +46,8 @@ public:
   virtual int32_t TLBTranslate(VAddr vAddr) = 0;
   virtual int32_t ITLBTranslate(VAddr iAddr) = 0 ;
   virtual void solveRequest(MemRequest *r) = 0;
+  virtual GStatsCntr * xuGetITLBMiss()=0;
+  virtual GStatsCntr * xuGetDTLBMiss()=0;
   virtual void boot() = 0;
   virtual void report(const char *str) = 0;
 };
@@ -76,6 +78,8 @@ public:
 
   void solveRequest(MemRequest *r);
 
+  GStatsCntr * xuGetITLBMiss(){}
+  GStatsCntr * xuGetDTLBMiss(){}
   void boot();
   void report(const char *str);
 };

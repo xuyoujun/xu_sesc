@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include "Resource.h"
 #include "GProcessor.h"
 
 #ifndef  XUSTATS_H
@@ -13,19 +13,25 @@
 #define temp_NUM    2
 #define control_NUM 3
 struct statsData{
-	long long  dl1;
-	long long il1;
-	long long l2;
+	long long dl1miss;
+	long long il1miss;
+	long long l2miss;
+	long long dl1hit;
+	long long il1hit;
+	long long l2hit;
+	long long itlb;
+	long long dtlb;
 	long long bpred;
 	long long missValue;
 	long long hitValue;
-	double energy;
+	double    energy;
 	long long clock;
 	long long nInst[MaxInstType];
+	long long nStall[MaxStall];
 	long long sumInst;
-	double IPC;
-	double power;
-	double energyEffiency; 
+	double    IPC;
+	double    power;
+	double    energyEffiency; 
 };
 class xuStats{
 	

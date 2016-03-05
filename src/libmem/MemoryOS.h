@@ -82,7 +82,12 @@ protected:
 
 public:
   MemoryOS(GMemorySystem *ms, const char *section);
-
+  GStatsCntr * xuGetITLBMiss(){
+  	return &missesITLB;
+  }
+  GStatsCntr * xuGetDTLBMiss(){
+  	return &missesDTLB;
+  }
   virtual ~MemoryOS() { }
 
   int32_t TLBTranslate(VAddr vAddr);
