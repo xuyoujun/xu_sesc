@@ -43,7 +43,7 @@ Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #include "Resource.h"
 #include "Snippets.h"
 #include "LDSTQ.h"
-
+#include "BPred.h"
 class FetchEngine;
 class GMemorySystem;
 class BPredictor;
@@ -246,6 +246,7 @@ public:
   virtual GStatsCntr **xuGetNStall() { return NULL;}
   bool getInOrderCore(){return InOrderCore;}
   virtual FetchEngine *getFetchEngine(){return NULL;}
+  virtual BPredictor *xuGetBPred(){return NULL;}
   /***************************************************************/
 };
 

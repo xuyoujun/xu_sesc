@@ -218,6 +218,10 @@ public:
   void setnInst2Sim(long long a) {  //comment by xu
     nInst2Sim = a;
   }
+/******************************************/
+
+  BPredictor *xuGetbp(){return bpred;}
+  /**************************************/
 };
 
 #endif   // FETCHENGINE_H

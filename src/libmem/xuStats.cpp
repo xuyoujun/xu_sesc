@@ -23,7 +23,9 @@ xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
        preData[i].l2hit      = 0;
        preData[i].itlb   = 0;
        preData[i].dtlb   = 0;
-       preData[i].bpred  = 0;
+       preData[i].nbranche = 0;
+       preData[i].nbranchMiss = 0;
+       preData[i].nbranchHit = 0;
        preData[i].energy = 0.0;
        preData[i].clock  = 0;
        memset(preData[i].nInst,0,MaxInstType * sizeof(long long));
@@ -51,7 +53,8 @@ void xuStats::getStatData(GProcessor *proc){
     MemObj *dataSource = gm->getDataSource();  //dl1
     MemObj *instSource = gm->getInstrSource(); //il1
     MemObj *l2Cache    = (*(instSource->getLowerLevel())).front();
-    
+    BPredictor *bpred  = proc->xuGetBPred();
+
    // get instructions    
     GStatsCntr **ppnInst = proc->xuGetNInst(); 
     thisData[cpuId].sumInst = 0;
@@ -86,6 +89,11 @@ void xuStats::getStatData(GProcessor *proc){
     thisData[cpuId].itlb = gm->getMemoryOS()->xuGetITLBMiss()->getValue();    
     //get dtlb  
     thisData[cpuId].dtlb = gm->getMemoryOS()->xuGetDTLBMiss()->getValue();    
+    //bpred
+    thisData[cpuId].nbranche    = bpred->xuGetNBranche();
+    thisData[cpuId].nbranchMiss = bpred->xuGetNBrancheMiss();
+    thisData[cpuId].nbranchHit  = thisData[cpuId].nbranche - thisData[cpuId].nbranchMiss;
+
 
     //get energy
     const char * procName = SescConf->getCharPtr("","cpucore",cpuId); 
@@ -116,14 +124,18 @@ void xuStats::inputToFile(GProcessor *proc){
     long long diffdl1hit     = thisData[cpuId].dl1hit - preData[cpuId].dl1hit;
     long long diffil1hit     = thisData[cpuId].il1hit - preData[cpuId].il1hit;
     long long diffl2hit      = thisData[cpuId].l2hit  - preData[cpuId].l2hit;
-    long long diffitlb   = thisData[cpuId].itlb  - preData[cpuId].itlb;
-    long long diffdtlb   = thisData[cpuId].dtlb  - preData[cpuId].dtlb;
-    long long diffclock  = thisData[cpuId].clock - preData[cpuId].clock;
-    long long diffinst   = thisData[cpuId].sumInst - preData[cpuId].sumInst;
-    double    diffIPC    = (double)diffinst / (double)diffclock;
-    double    diffenergy = thisData[cpuId].energy - preData[cpuId].energy;
-    double    diffpower  = diffenergy / diffclock*(osSim->getFrequency()/1e9);
-    double    L1MissRate = (double)(diffdl1miss + diffil1miss)/(double)(diffdl1miss + diffil1miss + diffdl1hit + diffil1hit);
+    long long diffitlb       = thisData[cpuId].itlb  - preData[cpuId].itlb;
+    long long diffdtlb       = thisData[cpuId].dtlb  - preData[cpuId].dtlb;
+    long long diffclock      = thisData[cpuId].clock - preData[cpuId].clock;
+    long long diffinst       = thisData[cpuId].sumInst - preData[cpuId].sumInst;
+    double    diffIPC        = (double)diffinst / (double)diffclock;
+    double    diffenergy     = thisData[cpuId].energy - preData[cpuId].energy;
+    double    diffpower      = diffenergy / diffclock*(osSim->getFrequency()/1e9);
+    double    L1MissRate     = (double)(diffdl1miss + diffil1miss)/(double)(diffdl1miss + diffil1miss + diffdl1hit + diffil1hit);
+    double    L2MissRate     = (double)diffl2miss/(double)(diffl2miss + diffl2hit);
+    long long diffNBranch    = thisData[cpuId].nbranche - preData[cpuId].nbranche;
+    long long diffNBranchMiss= thisData[cpuId].nbranchMiss - preData[cpuId].nbranchMiss;
+    long long diffNBranchHit = thisData[cpuId].nbranchHit - preData[cpuId].nbranchHit;
   ///Stall 
     long long diffWinStall          = thisData[cpuId].nStall[SmallWinStall]     - preData[cpuId].nStall[SmallWinStall]; 
     long long diffROBStall          = thisData[cpuId].nStall[SmallROBStall]     - preData[cpuId].nStall[SmallROBStall];  
@@ -134,12 +146,14 @@ void xuStats::inputToFile(GProcessor *proc){
     long long diffReplayStall       = thisData[cpuId].nStall[ReplayStall]       - preData[cpuId].nStall[ReplayStall]; 
     long long diffPortConflictStall = thisData[cpuId].nStall[PortConflictStall] - preData[cpuId].nStall[PortConflictStall]; 
     long long diffSwitchStall       = thisData[cpuId].nStall[SwitchStall]       - preData[cpuId].nStall[SwitchStall]; 
-    long long diffStall = diffWinStall + diffROBStall + diffREGStall + diffLoadStall + diffStoreStall + diffBranchStall + diffPortConflictStall + diffSwitchStall;
-
+    long long diffStall             = diffWinStall + diffROBStall + diffREGStall + diffLoadStall + diffStoreStall + diffBranchStall + diffPortConflictStall + diffSwitchStall;
 
     //print to result file
-    fprintf(fp,"%d %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lf %lf %lf %lf %lf ",cpuId,diffdl1miss,diffil1miss,diffl2miss,diffdl1hit,diffil1hit,diffl2hit,diffitlb,diffdtlb,diffStall,diffclock,diffIPC,L1MissRate,diffenergy,diffpower,diffIPC/diffpower);
+    fprintf(fp,"%d %lf %lf %lf %lf %lf %lf ",cpuId,(double)diffdl1miss/(double)interval,(double)diffil1miss/(double)interval,(double)diffl2miss/(double)interval,(double)diffdl1hit/(double)interval,(double)diffil1hit/(double)interval,(double)diffl2hit/(double)interval);
     
+    fprintf(fp," %lf %lf %lf %lf %lf %lf ",(double)diffitlb/(double)interval,(double)diffdtlb/(double)interval,(double)diffStall/(double)interval,(double)diffNBranchHit/(double)interval,(double)diffNBranchMiss/(double)interval,(double)diffNBranchMiss/(double)(diffNBranchHit + diffNBranchMiss));
+
+    fprintf(fp," %lld %lf %lf %lf %lf %lf %lf ",diffclock,diffIPC,L1MissRate,L2MissRate,diffenergy,diffpower,diffIPC/diffpower);
     //instruction   and  phase 
     long long diffiALU  = thisData[cpuId].nInst[iALU]   - preData[cpuId].nInst[iALU]; 
     long long diffiMult = thisData[cpuId].nInst[iMult]  - preData[cpuId].nInst[iMult];  
@@ -237,17 +251,20 @@ void xuStats::inputToFile(GProcessor *proc){
        fprintf(fp,"    %lf %lf %lf %lf %lld\n",(double)INT/(double)interval,(double)BJ/(double)interval,(double)FP/(double)interval,(double)MEM/(double)interval,control_table[cpuId][current_ID]);
     
     //save to the previous result
-    preData[cpuId].dl1miss   =  thisData[cpuId].dl1miss;
-    preData[cpuId].il1miss   =  thisData[cpuId].il1miss;
-    preData[cpuId].l2miss    =  thisData[cpuId].l2miss;
-    preData[cpuId].dl1hit    =  thisData[cpuId].dl1hit;
-    preData[cpuId].il1hit    =  thisData[cpuId].il1hit;
-    preData[cpuId].l2hit     =  thisData[cpuId].l2hit;
-    preData[cpuId].itlb      =  thisData[cpuId].itlb;
-    preData[cpuId].dtlb      =  thisData[cpuId].dtlb;
-    preData[cpuId].clock     =  thisData[cpuId].clock;
-    preData[cpuId].sumInst   =  thisData[cpuId].sumInst;
-    preData[cpuId].energy    =  thisData[cpuId].energy;
+    preData[cpuId].dl1miss    =  thisData[cpuId].dl1miss;
+    preData[cpuId].il1miss    =  thisData[cpuId].il1miss;
+    preData[cpuId].l2miss     =  thisData[cpuId].l2miss;
+    preData[cpuId].dl1hit     =  thisData[cpuId].dl1hit;
+    preData[cpuId].il1hit     =  thisData[cpuId].il1hit;
+    preData[cpuId].l2hit      =  thisData[cpuId].l2hit;
+    preData[cpuId].itlb       =  thisData[cpuId].itlb;
+    preData[cpuId].dtlb       =  thisData[cpuId].dtlb;
+    preData[cpuId].nbranche   =  thisData[cpuId].nbranche;
+    preData[cpuId].nbranchMiss=  thisData[cpuId].nbranchMiss;
+    preData[cpuId].nbranchHit =  thisData[cpuId].nbranchHit;
+    preData[cpuId].clock      =  thisData[cpuId].clock;
+    preData[cpuId].sumInst    =  thisData[cpuId].sumInst;
+    preData[cpuId].energy     =  thisData[cpuId].energy;
     
     for(int i = iOpInvalid; i < MaxInstType; i++){
 	preData[cpuId].nInst[i] = thisData[cpuId].nInst[i];

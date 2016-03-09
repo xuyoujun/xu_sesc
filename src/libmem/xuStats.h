@@ -21,9 +21,11 @@ struct statsData{
 	long long l2hit;
 	long long itlb;
 	long long dtlb;
-	long long bpred;
 	long long missValue;
 	long long hitValue;
+	long long nbranche;
+	long long nbranchMiss;
+	long long nbranchHit;
 	double    energy;
 	long long clock;
 	long long nInst[MaxInstType];

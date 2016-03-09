@@ -91,6 +91,7 @@ public:
   GStatsCntr **xuGetNStall(){
   	return nStall;
   }
+  BPredictor *xuGetBPred(){return IFID.xuGetbp();}
 };
 
 #endif   // SPROCESSOR_H

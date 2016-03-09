@@ -439,6 +439,11 @@ public:
   void switchOut(Pid_t pid) {
     pred->switchOut(pid);
   }
+  //*******************xu add this****************************//
+
+    long long xuGetNBranche(){return nBranches.getValue();}
+    long long xuGetNBrancheMiss(){return nMiss.getValue();}
+    /************************************************************/
 };
 
 #endif   // BPRED_H
