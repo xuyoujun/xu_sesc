@@ -53,7 +53,7 @@ private:
   // Static data
 //  static long long nInst2Sim;
  // static long long totalnInst;
-  
+  // comment by xu
   long long nInst2Sim;
   long long totalnInst;
   const int32_t Id;

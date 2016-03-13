@@ -173,8 +173,9 @@ void xuStats::inputToFile(GProcessor *proc){
     long long diffFP;
     long long diffMEM;
     double delt;
-    int tempid    = control_table[cpuId][max_ID] + 1;
-    int currentid = control_table[cpuId][current_ID];
+    int threadid = arc_sigma[cpuId];
+    int tempid    = control_table[threadId][max_ID] + 1;
+    int currentid = control_table[threadId][current_ID];
     if(0 == tempid){ // for the first phase
         if(pre == false ){
 		phase_Z[0] = INT;
@@ -190,65 +191,86 @@ void xuStats::inputToFile(GProcessor *proc){
 		diffMEM = abs(phase_Z[3] - MEM);
 		delt = (double)(diffINT + diffBJ + diffFP + diffMEM)/(double)interval;
 		if(delt > ITV_diff){
-			control_table[cpuId][temp_NUM] = 0;
+			control_table[threadId][temp_NUM] = 0;
 			phase_Z[0] = INT;
 			phase_Z[1] = BJ;
 			phase_Z[2] = FP;
 			phase_Z[3] = MEM;
 		}
 		else {
-			if (++control_table[cpuId][temp_NUM] >= 4){	  
-				control_table[cpuId][temp_NUM] = 0;
-				control_table[cpuId][max_ID] = tempid;
-				control_table[cpuId][current_ID] = tempid;
-				phase_table[cpuId][tempid][0] = phase_Z[0];
-				phase_table[cpuId][tempid][1] = phase_Z[1];
-				phase_table[cpuId][tempid][2] = phase_Z[2];
-				phase_table[cpuId][tempid][3] = phase_Z[3];
+			if (++control_table[threadId][temp_NUM] >= 4){	  
+				control_table[threadId][temp_NUM] = 0;
+				control_table[threadId][max_ID] = tempid;
+				control_table[threadId][current_ID] = tempid;
+				phase_table[threadId][tempid][0] = phase_Z[0];
+				phase_table[threadId][tempid][1] = phase_Z[1];
+				phase_table[threadId][tempid][2] = phase_Z[2];
+				phase_table[threadId][tempid][3] = phase_Z[3];
 			}
 		}
 	}
     }
     else{ //other phase
-		diffINT = abs(phase_table[cpuId][currentid][0] - INT); 
-		diffBJ  = abs(phase_table[cpuId][currentid][1] - BJ); 
-		diffFP  = abs(phase_table[cpuId][currentid][2] - FP); 
-		diffMEM = abs(phase_table[cpuId][currentid][3] - MEM); 
+		diffINT = abs(phase_table[threadId][currentid][0] - INT); 
+		diffBJ  = abs(phase_table[threadId][currentid][1] - BJ); 
+		diffFP  = abs(phase_table[threadId][currentid][2] - FP); 
+		diffMEM = abs(phase_table[threadId][currentid][3] - MEM); 
 		delt = (double)(diffINT + diffBJ + diffFP + diffMEM)/(double)interval;
 //	printf("%lf\n", delt);
 	if( delt >  ITV_diff){ //may be a new phase  // may a previous phase
-		if(++control_table[cpuId][temp_NUM] >= 4){// is another phase
-			control_table[cpuId][temp_NUM] = 0;
-			for(int i = 0; i <= control_table[cpuId][max_ID]; i++){ //Is previous phase?
-				diffINT = abs(phase_table[cpuId][i][0] - INT); 
-				diffBJ  = abs(phase_table[cpuId][i][1] - BJ); 
-				diffFP  = abs(phase_table[cpuId][i][2] - FP); 
-				diffMEM = abs(phase_table[cpuId][i][3] - MEM); 
+		if(++control_table[threadId][temp_NUM] >= 4){// is another phase
+			control_table[threadId][temp_NUM] = 0;
+			for(int i = 0; i <= control_table[threadId][max_ID]; i++){ //Is previous phase?
+				diffINT = abs(phase_table[threadId][i][0] - INT); 
+				diffBJ  = abs(phase_table[threadId][i][1] - BJ); 
+				diffFP  = abs(phase_table[threadId][i][2] - FP); 
+				diffMEM = abs(phase_table[threadId][i][3] - MEM); 
 				delt = (double)(diffINT + diffBJ + diffFP + diffMEM)/(double)interval;
 
-				if(delt <= ITV_diff){
-					control_table[cpuId][max_ID]--;
+				if(delt <= ITV_diff){  //a previous phase.
+					control_table[threadId][max_ID]--;
 					tempid = i;
-			//		printf("zhi shaoyiciba\n");
 					break;
 				}
 			}
-			control_table[cpuId][max_ID]++;
-			control_table[cpuId][current_ID] = tempid;
-			phase_table[cpuId][tempid][0] = INT;
-			phase_table[cpuId][tempid][1] = BJ;
-			phase_table[cpuId][tempid][2] = FP;
-			phase_table[cpuId][tempid][3] = MEM;
+			control_table[threadId][max_ID]++;
+			control_table[threadId][current_ID] = tempid; //update current_ID
+			phase_table[threadId][tempid][0] = INT;
+			phase_table[threadId][tempid][1] = BJ;
+			phase_table[threadId][tempid][2] = FP;
+			phase_table[threadId][tempid][3] = MEM;
 
 		}
 	}
 	else{ //is current
-		control_table[cpuId][temp_NUM] = 0;
+		control_table[threadId][temp_NUM] = 0;
 	}
     }
-     
+    if(currentid != control_table[threadId][current_ID]){ //thread's phase is changed ,may need migrate
+    	double C = diffIPC;
+	double T = (double)INT/(double)interval;
+	double B = (double)diffNBranchMiss/(double)interval;
+	double M = (double)MEM/(double)interval;
+	if(cpuId < 5){   //S core
+		double S = 0.0407 + 0.1227*C - 0.0013 * T + 0.0110 * B - 0.0371 *M; //SS
+		double L = 0.0631 + 0.0162*C + 0.0021 * T - 0.1284 * B - 0.0394 *M;  //SL
+	}
+	else{  //  Lcore
+	
+		double L = 0.0623 + 0.0040 * C - 0.0025 * T - 0.0905 * B - 0.0363 *M;  //LL
+		double S = 0.0677 + 0.0012 * C - 0.0110 * T + 0.0028 * B - 0.0434 *M;  //LS
+	}
+        for(int i = 1; i <= 4; i++){
+		phase_pw[threadId][tempid][i] = S;
+		phase_pw[threadId][tempid][i + 4] = L;
+	}
+       if(true == is_Migrate(sigma_curr,sigma_dst)){
+       		doMigrate(sigma_curr,sigma_dst);
+       }	
+    
+    } 
        //fprintf(fp,"    %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld\n",diffiALU,diffiMult,diffiDiv,diffiBJ,diffiLoad,diffiStore,difffpALU,difffpMult,difffpDiv,control_table[cpuId][current_ID]);
-       fprintf(fp,"    %lf %lf %lf %lf %lld\n",(double)INT/(double)interval,(double)BJ/(double)interval,(double)FP/(double)interval,(double)MEM/(double)interval,control_table[cpuId][current_ID]);
+       fprintf(fp,"    %lf %lf %lf %lf %lld\n",(double)INT/(double)interval,(double)BJ/(double)interval,(double)FP/(double)interval,(double)MEM/(double)interval,control_table[phaseId][current_ID]);
     
     //save to the previous result
     preData[cpuId].dl1miss    =  thisData[cpuId].dl1miss;
@@ -312,9 +334,28 @@ void xuStats::getTotStats(GProcessor *proc){
 
 
 
+bool xuStats::is_Migrate(int *curr, int *dst){
+     double * matrix[xu_nCPU];
+     for(int i = 1; i < xu_nCPU; i++){
+     	//i is thread's id
+	//
+	int phaseid = control_table[i][current_ID];
+	matrix[i] = phase_pw[i][phaseid];
+     }
+
+}
 
 
+void xuStats::doMigrate(int *curr, int *dst){
+	for(int i = 1; i <= 8 ; i++){
+		if(curr[i] != dst[i]){ //thread need to be migrate
+			
+		
+		}
+	
+	}
 
+}
 
 
 

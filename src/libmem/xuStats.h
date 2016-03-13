@@ -12,6 +12,7 @@
 #define max_ID      1
 #define temp_NUM    2
 #define control_NUM 3
+#define xu_nPhase  16
 struct statsData{
 	long long dl1miss;
 	long long il1miss;
@@ -47,9 +48,16 @@ private:
 	struct statsData *thisData;
 	long long  phase_Z[4];
 	long long control_table[xu_nCPU][max_ID + 1];
-	long long  phase_table[xu_nCPU][16][4];
+	long long  phase_table[xu_nCPU][xu_nPhase][4];
+	double     phase_pw[xu_nCPU][xu_nPhase][xu_nCPU];
 	long long  interval;
 	double     ITV_diff;
+	int sigma_curr[xu_nCPU];  //thread -> cpu
+	int sigma_dst[xu_nCPU];  //thread -> cpu
+        int arc_sigma[xu_nCPU]; //cpu->thread
+	bool is_Migrate(int *curr, int *dst);
+	void doMigrate(int *curr, int *dst);
+
 public:
 	xuStats(char *fileName,char *totFileName,int nCPUs);
 	void getStatData(GProcessor *proc);

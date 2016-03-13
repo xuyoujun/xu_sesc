@@ -92,7 +92,7 @@ void RunningProcs::workingListAdd(GProcessor *core)
  extern OSSim *osSim;
 void RunningProcs::run()
 {
-/**********************************************************************************************************************/
+/***************start*******************************************************************************************************/
   long long *sumInsts = (long long int *)malloc(sizeof(long long) * SescConf->getRecordSize("","cpucore"));  //add by xu
   memset(sumInsts,0,sizeof(long long) * SescConf->getRecordSize("","cpucore"));  //add by xu
   int   *count        = (int *)malloc(sizeof(int)* SescConf->getRecordSize("","cpucore"));  //add by xu
@@ -104,7 +104,7 @@ void RunningProcs::run()
 
   long long interval = 100000;
   double delta = 0.05;
- /***********************************************************************************************************************/
+ /***************end********************************************************************************************************/
   I(cpuVector.size() > 0 );
 
   IS(currentCPU = 0);
@@ -129,7 +129,7 @@ void RunningProcs::run()
     	currentCPU = workingList[i];
         currentCPU->advanceClock();   //This function simulate the entire process of pipeline
 		
-//	//**************************************************************************************************** add by xu/
+//	//*****************************************************start*********************************************** add by xu/
 	currCpuId = currentCPU->getId();
 	currPId = currentCPU->findVictimPid();
 
@@ -183,7 +183,7 @@ void RunningProcs::run()
 //	if(0 != proc->nGradInsts)	
 //		printf("Xu *********%ld:\n",proc->nGradInsts);
 //	printf("proc->state:%s\n",proc->getState() ==1?"Running":"No Running");
-	/*******************************************************************************************************/
+	/***********************************************************end********************************************/
 
           }else{
             workingListRemove(workingList[i]);

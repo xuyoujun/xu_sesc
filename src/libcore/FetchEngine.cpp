@@ -320,7 +320,9 @@ void FetchEngine::realFetch(IBucket *bucket, int32_t fetchMax)
   totalnInst+=tmp;
   if( totalnInst >= nInst2Sim ) {
     MSG("stopSimulation at %lld (%lld)",totalnInst, nInst2Sim);
+    //printf("*************I'm in FetchEngine  cpuId = %d\n", cpuId); //add bu xu
     osSim->stopSimulation();
+   // osSim->stopProcessor(cpuId);
   }
 
   nFetched.add(tmp);
