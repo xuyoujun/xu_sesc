@@ -34,6 +34,14 @@ xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
        preData[i].sumInst = 0;
        preData[i].IPC = 0.0;
        preData[i].energyEffiency = 0.0;
+       
+       context[i].sumInst  = 0;
+       context[i].clock    = 0;
+       context[i].IPC      = 0;
+       context[i].power    = 0;
+       context[i].energy   = 0;
+       context[i].pw       = 0;
+	
     }
     for(int i = 0; i < xu_nCPU; i++){
     	for( int j = 0; j < control_NUM; j++){
@@ -42,6 +50,11 @@ xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
 
 	control_table[i][temp_NUM] = 0;
     }
+    for(int i = 0; i < xu_nThread; i++){
+	    statInst[i] = 0;
+    }
+
+
     for(int i = 0; i < xu_nThread; i++){
 	    sigma_curr[i] = i;
     }
@@ -56,13 +69,16 @@ xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
      memset(&phase_table[0][0][0],0,xu_nThread * xu_nPhase * 4 * sizeof(long long));
      memset(&phase_pw[0][0][0],0,xu_nThread * xu_nPhase * xu_nCPU * sizeof(double));
      memset(&phase_Z[0],0,4 * sizeof(long long));
+     memset(&statInst[0],0,xu_nPhase * sizeof(long long));
 
      interval = 100000;
+     totalNInst = 100000000;
      ITV_diff = 0.050;
 }
 
 void xuStats::getStatData(GProcessor *proc){
     int cpuId = proc->getId();
+    int threadId = arc_sigma[cpuId];
     GMemorySystem *gm  = proc->getMemorySystem();
     MemObj *dataSource = gm->getDataSource();  //dl1
     MemObj *instSource = gm->getInstrSource(); //il1
@@ -125,6 +141,7 @@ void xuStats::getStatData(GProcessor *proc){
 
 void xuStats::inputToFile(GProcessor *proc){
     int cpuId = proc->getId();
+    int threadId = arc_sigma[cpuId];
     fp = fopen(fileName,"a+");
     if(NULL == fp){
     	printf("Can't open file : %s\n",fileName);
@@ -168,6 +185,14 @@ void xuStats::inputToFile(GProcessor *proc){
     fprintf(fp," %lf %lf %lf %lf %lf %lf ",(double)diffitlb/(double)interval,(double)diffdtlb/(double)interval,(double)diffStall/(double)interval,(double)diffNBranchHit/(double)interval,(double)diffNBranchMiss/(double)interval,(double)diffNBranchMiss/(double)(diffNBranchHit + diffNBranchMiss));
 
     fprintf(fp," %lld %lf %lf %lf %lf %lf %lf ",diffclock,diffIPC,L1MissRate,L2MissRate,diffenergy,diffpower,diffIPC/diffpower);
+   
+  statInst[threadId] += diffinst;
+      
+    if(statInst[threadId] > totalNInst){
+         getTotStats(proc); 
+    }
+
+
     //instruction   and  phase 
     long long diffiALU  = thisData[cpuId].nInst[iALU]   - preData[cpuId].nInst[iALU]; 
     long long diffiMult = thisData[cpuId].nInst[iMult]  - preData[cpuId].nInst[iMult];  
@@ -186,10 +211,9 @@ void xuStats::inputToFile(GProcessor *proc){
     long long diffBJ;
     long long diffFP;
     long long diffMEM;
-    double delt;
-    int threadId = arc_sigma[cpuId];
-    int tempid    = control_table[threadId][max_ID] + 1;
-    int currentid = control_table[threadId][current_ID];
+    double    delt;
+    int       tempid    = control_table[threadId][max_ID] + 1;
+    int       currentid = control_table[threadId][current_ID];
     if(0 == tempid){ // for the first phase
         if(pre == false ){
 		phase_Z[0] = INT;
@@ -260,7 +284,11 @@ void xuStats::inputToFile(GProcessor *proc){
 		control_table[threadId][temp_NUM] = 0;
 	}
     }
-    if(currentid != control_table[threadId][current_ID]){ //thread's phase is changed ,may need migrate
+
+
+
+
+    if(false && currentid != control_table[threadId][current_ID]){ //thread's phase is changed ,may need migrate
     	double C = diffIPC;
 	double T = (double)INT/(double)interval;
 	double B = (double)diffNBranchMiss/(double)interval;
@@ -316,13 +344,16 @@ void xuStats::getTotStats(GProcessor *proc){
 	//get app's whole statistical data 
 	//such as IPC, Power ,IPC/Power etc.
       int cpuId       = 0;
+      int threadId    = 0;
       long long clock = 0;
       double IPC      = 0.0;
       long long sumInst = 0;
+      struct statDataContext currContext;
       clock = proc->getClockTicks();
-     // printf("clock = %ld\n",clock);
+      cpuId = proc->getId();
+      threadId = arc_sigma[cpuId];
+      
       if(clock > 0){
-	   cpuId = proc->getId();
    	   //clock = proc->getClockTicks();   // clock 
 
            GStatsCntr **ppnInst = proc->xuGetNInst();  //sumInst
@@ -346,10 +377,26 @@ void xuStats::getTotStats(GProcessor *proc){
 	          exit(-1);
             }
   //    printf("clock = %ld\n",clock);
-	   fprintf(totFp,"%d ",cpuId);
-	   fprintf(totFp,"%ld ",sumInst);
-	   fprintf(totFp,"%ld ",clock);
-	   fprintf(totFp,"%lf %lf %lf %lf\n",IPC,corePower,coreEnergy,IPC/corePower);
+      	   
+	   currContext.clock   = clock;
+      	   currContext.sumInst = sumInst;
+      	   currContext.IPC     = IPC;
+      	   currContext.power   = corePower;
+      	   currContext.energy  = coreEnergy;
+     	   currContext.pw      = IPC/corePower;
+
+	   fprintf(totFp,"%d ",ThreadId);
+	   fprintf(totFp,"%ld ",sumInst - context[threadId].sumInst);
+	   fprintf(totFp,"%ld ",clock - context[threadId].clock);
+	   fprintf(totFp,"%lf",IPC -context[threadId].IPC);
+	   fprintf(totFp,"%lf",corePower -context[threadId].power);
+	   fprintf(totFp,"%lf",coreEnergy - context[threadId].energy);
+	   fprintf(totFp,"%lf",coreIPC/corePower -context[threadId].pw);
+	  // fprintf(totFp,"%lf %lf %lf %lf\n",corePower,coreEnergy,IPC/corePower);
+		
+	   context[cpuId] = currContext;
+	   sigma[threadId]  = 0;
+	   arc_sigma[cpuId] = 0;
       	   fclose(totFp);
        }
 }

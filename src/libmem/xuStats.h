@@ -37,25 +37,38 @@ struct statsData{
 	double    power;
 	double    energyEffiency; 
 };
+
+
+struct statDataContext{}
+	long long sumInst;
+	long long clock;
+	double    IPC;
+	double    power;
+	double    energy;
+	double    pw;
+;
 class xuStats{
 	
 private:
-	FILE *totFp;
-	char *totFileName;
-	FILE *fp;
-	bool pre;
-	char *fileName;
+	FILE   *totFp;
+	char   *totFileName;
+	FILE   *fp;
+	bool   pre;
+	char   *fileName;
 	struct statsData *preData;
 	struct statsData *thisData;
+	struct statDataContext  context[xu_nCPU];
 	long long  phase_Z[4];
 	long long  control_table[xu_nCPU][max_ID + 1];
 	long long  phase_table[xu_nCPU][xu_nPhase][4];
 	double     phase_pw[xu_nThread][xu_nPhase][xu_nCPU];
 	long long  interval;
+	long long  totalNInst;
+	long long  statInst[xu_nPhase];
 	double     ITV_diff;
-	int sigma_curr[xu_nThread];  //thread -> cpu
-	int sigma_dst[xu_nThread];  //thread -> cpu
-        int arc_sigma[xu_nCPU]; //cpu->thread
+	int  sigma_curr[xu_nThread];  //thread -> cpu
+	int  sigma_dst[xu_nThread];  //thread -> cpu
+        int  arc_sigma[xu_nCPU]; //cpu->thread
 	bool is_Migrate(int *curr, int *dst);
 	void doMigrate(int *curr, int *dst);
 	void swap(int * a, int *b){
