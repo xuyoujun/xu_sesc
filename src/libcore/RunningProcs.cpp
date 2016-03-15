@@ -98,10 +98,10 @@ void RunningProcs::run()
   int   *count        = (int *)malloc(sizeof(int)* SescConf->getRecordSize("","cpucore"));  //add by xu
   memset(count,0,sizeof(int) * SescConf->getRecordSize("","cpucore"));  //add by xu
   xuStats  *xuStat = osSim->xuGetStats();
-  bool migrated[4] = {false,false,false,false};
+  bool migrated[9] = {false,false,false,false,false,false,false,false,false};
   int currCpuId = 0;
   int currPId  = 0;
-
+  long long ntotal = 100000000;
   long long interval = 100000;
   double delta = 0.05;
  /***************end********************************************************************************************************/
@@ -131,20 +131,26 @@ void RunningProcs::run()
 		
 //	//*****************************************************start*********************************************** add by xu/
 	currCpuId = currentCPU->getId();
-	currPId = currentCPU->findVictimPid();
+//	currPId = currentCPU->findVictimPid();
 
-	sumInsts[currCpuId] += currentCPU->getAndClearnGradInsts(currPId);
-
-	if(sumInsts[currCpuId]/interval  > count[currCpuId]){
-		count[currCpuId] ++;
-		xuStat->getStatData(currentCPU);
-		xuStat->inputToFile(currentCPU);	
-	}
-
-
-
-
-
+//	ProcessId *proc = ProcessId::getProcessId(currPId);
+         
+	//if(proc->getNGradInsts() < ntotal){
+//	if(sumInsts[currCpuId] < ntotal){
+		sumInsts[currCpuId] += currentCPU->getAndClearnGradInsts(currPId);
+		if(sumInsts[currCpuId]/interval  > count[currCpuId]){
+			count[currCpuId] ++;
+			xuStat->getStatData(currentCPU);
+			xuStat->inputToFile(currentCPU);	
+		}
+//	}
+//	else{
+//		if(!migrated[currCpuId]){
+//			migrated[currCpuId] = true;
+//			osSim->cpus.switchOut(currCpuId,proc);
+//			xuStat->getTotStats(getProcessor(currCpuId));
+//		}
+//	}
 
 
 
@@ -197,13 +203,23 @@ void RunningProcs::run()
 
 /***start*********************************************************************************************************************/	   
 	    currCpuId = currentCPU->getId();                                                                 //add by xu
-	    currPId = currentCPU->findVictimPid();
-	    sumInsts[currCpuId] += currentCPU->getAndClearnGradInsts(currPId);
-	    if(sumInsts[currCpuId]/interval  > count[currCpuId]){
-		count[currCpuId] ++;
-		xuStat->getStatData(currentCPU);
-		xuStat->inputToFile(currentCPU);	
-	   }
+//	    currPId = currentCPU->findVictimPid();
+//	    ProcessId *proc = ProcessId::getProcessId(currPId);
+	    //if(sumInsts[currCpuId] < ntotal){
+	    	sumInsts[currCpuId] += currentCPU->getAndClearnGradInsts(currPId);
+	    	if(sumInsts[currCpuId]/interval  > count[currCpuId]){
+			count[currCpuId] ++;
+			xuStat->getStatData(currentCPU);
+			xuStat->inputToFile(currentCPU);	
+	   	}
+	   //}
+	  // else{
+	//	if(!migrated[currCpuId]){
+	//		migrated[currCpuId] = true;
+	//		osSim->cpus.switchOut(currCpuId,proc);
+	//		xuStat->getTotStats(getProcessor(currCpuId));
+	//	}
+	 //  }
 /****end*********************************************************************************************************************/
           
 	  }else{
@@ -224,10 +240,10 @@ void RunningProcs::run()
     }
   }while(!EventScheduler::empty());
  /**************************************************************************************************************************/  
-  //int nCpus = size();                           //add by xu
-  //for(int i = 0; i < nCpus; i++){
-  //    xuStat->getTotStats(getProcessor(i));
- // } 
+  int nCpus = size();                           //add by xu
+  for(int i = 0; i < nCpus; i++){
+//      xuStat->getTotStats(getProcessor(i));
+  } 
   /***********************************************************************************************************************/
 }
 

@@ -6,6 +6,7 @@
 #include "Processor.h"
 #include "xuStats.h"
 #include "OSSim.h"
+#include "ProcessId.h"
 xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
     this->fileName = fileName;
     this->totFileName = totFileName;
@@ -41,8 +42,21 @@ xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
 
 	control_table[i][temp_NUM] = 0;
     }
-     memset(&phase_table[0][0][0],0,9 * 16 * 4 * sizeof(long long));
+    for(int i = 0; i < xu_nThread; i++){
+	    sigma_curr[i] = i;
+    }
+
+    for(int i = 0; i < xu_nThread; i++){
+	    sigma_dst[i] = i;
+    }
+
+    for(int i = 0; i < xu_nCPU; i++){
+	    arc_sigma[i] = i;
+    }
+     memset(&phase_table[0][0][0],0,xu_nThread * xu_nPhase * 4 * sizeof(long long));
+     memset(&phase_pw[0][0][0],0,xu_nThread * xu_nPhase * xu_nCPU * sizeof(double));
      memset(&phase_Z[0],0,4 * sizeof(long long));
+
      interval = 100000;
      ITV_diff = 0.050;
 }
@@ -173,7 +187,7 @@ void xuStats::inputToFile(GProcessor *proc){
     long long diffFP;
     long long diffMEM;
     double delt;
-    int threadid = arc_sigma[cpuId];
+    int threadId = arc_sigma[cpuId];
     int tempid    = control_table[threadId][max_ID] + 1;
     int currentid = control_table[threadId][current_ID];
     if(0 == tempid){ // for the first phase
@@ -251,14 +265,16 @@ void xuStats::inputToFile(GProcessor *proc){
 	double T = (double)INT/(double)interval;
 	double B = (double)diffNBranchMiss/(double)interval;
 	double M = (double)MEM/(double)interval;
+	double S;
+	double L;
 	if(cpuId < 5){   //S core
-		double S = 0.0407 + 0.1227*C - 0.0013 * T + 0.0110 * B - 0.0371 *M; //SS
-		double L = 0.0631 + 0.0162*C + 0.0021 * T - 0.1284 * B - 0.0394 *M;  //SL
+		 S = 0.0407 + 0.1227*C - 0.0013 * T + 0.0110 * B - 0.0371 *M; //SS
+		 L = 0.0631 + 0.0162*C + 0.0021 * T - 0.1284 * B - 0.0394 *M;  //SL
 	}
 	else{  //  Lcore
 	
-		double L = 0.0623 + 0.0040 * C - 0.0025 * T - 0.0905 * B - 0.0363 *M;  //LL
-		double S = 0.0677 + 0.0012 * C - 0.0110 * T + 0.0028 * B - 0.0434 *M;  //LS
+		 L = 0.0623 + 0.0040 * C - 0.0025 * T - 0.0905 * B - 0.0363 *M;  //LL
+		 S = 0.0677 + 0.0012 * C - 0.0110 * T + 0.0028 * B - 0.0434 *M;  //LS
 	}
         for(int i = 1; i <= 4; i++){
 		phase_pw[threadId][tempid][i] = S;
@@ -270,7 +286,7 @@ void xuStats::inputToFile(GProcessor *proc){
     
     } 
        //fprintf(fp,"    %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld\n",diffiALU,diffiMult,diffiDiv,diffiBJ,diffiLoad,diffiStore,difffpALU,difffpMult,difffpDiv,control_table[cpuId][current_ID]);
-       fprintf(fp,"    %lf %lf %lf %lf %lld\n",(double)INT/(double)interval,(double)BJ/(double)interval,(double)FP/(double)interval,(double)MEM/(double)interval,control_table[phaseId][current_ID]);
+       fprintf(fp,"    %lf %lf %lf %lf %lld\n",(double)INT/(double)interval,(double)BJ/(double)interval,(double)FP/(double)interval,(double)MEM/(double)interval,control_table[threadId][current_ID]);
     
     //save to the previous result
     preData[cpuId].dl1miss    =  thisData[cpuId].dl1miss;
@@ -303,9 +319,11 @@ void xuStats::getTotStats(GProcessor *proc){
       long long clock = 0;
       double IPC      = 0.0;
       long long sumInst = 0;
-      if(proc->getClockTicks() > 0){
+      clock = proc->getClockTicks();
+     // printf("clock = %ld\n",clock);
+      if(clock > 0){
 	   cpuId = proc->getId();
-   	   clock = proc->getClockTicks();   // clock 
+   	   //clock = proc->getClockTicks();   // clock 
 
            GStatsCntr **ppnInst = proc->xuGetNInst();  //sumInst
            for(int i = iOpInvalid; i < MaxInstType; i++){
@@ -327,7 +345,11 @@ void xuStats::getTotStats(GProcessor *proc){
     	         printf("Can't open file : %s\n",fileName);
 	          exit(-1);
             }
-	   fprintf(totFp,"%d %lf %lf %lf %lf\n",cpuId,IPC,corePower,coreEnergy,IPC/corePower);
+  //    printf("clock = %ld\n",clock);
+	   fprintf(totFp,"%d ",cpuId);
+	   fprintf(totFp,"%ld ",sumInst);
+	   fprintf(totFp,"%ld ",clock);
+	   fprintf(totFp,"%lf %lf %lf %lf\n",IPC,corePower,coreEnergy,IPC/corePower);
       	   fclose(totFp);
        }
 }
@@ -336,31 +358,74 @@ void xuStats::getTotStats(GProcessor *proc){
 
 bool xuStats::is_Migrate(int *curr, int *dst){
      double * matrix[xu_nCPU];
-     for(int i = 1; i < xu_nCPU; i++){
+     for(int i = 1; i < xu_nThread; i++){
      	//i is thread's id
-	//
-	int phaseid = control_table[i][current_ID];
+	int phaseid = control_table[i][current_ID];  
 	matrix[i] = phase_pw[i][phaseid];
      }
-
+    double max = 0.0; 
+    int A[xu_nPhase] = {0,1,2,3,4,5,6,7,8};
+    dfs(matrix,dst,A,max,1,xu_nThread); 
+    for(int i = 1; i < xu_nPhase; i++){
+    	if(curr[i] != dst[i]) return true;  
+    }
+    return false;
+    // matrix[9][9]:  1~8  1~8 is useful , 0 raw and 0 column is invalid
 }
 
 
-void xuStats::doMigrate(int *curr, int *dst){
-	for(int i = 1; i <= 8 ; i++){
-		if(curr[i] != dst[i]){ //thread need to be migrate
-			
+
+void xuStats::dfs(double **matrix, int *dst,int *A,double &max,int start, int end){
+
+	if(start == end){
+		double sum = 0.0; 
+		for(int i= 1; i< xu_nPhase; i ++){
+			sum += matrix[i][A[i]];
+		}
+		if(sum > max){
+			max = sum;
+			for(int i = 1; i < xu_nPhase; i++){
+				dst[i] = A[i];
+			}
+		}
+		return;
+	}
+	else{
+		for(int i = start; i < end; i++){
+			swap((A+i),(A+start));
+			dfs(matrix,dst,A,max,start + 1, end);
+			swap((A+i),(A+start));
+		}
+	}
+}
+
+void xuStats::doMigrate(int *curr, int *dst){     //migrate threads from curr to dst.
+
+	int        cpuid;
+	GProcessor *currentCPU;
+	ProcessId  *proc;
+	
+	for(int pid = 1; pid < xu_nThread ; pid++){  //switch out
+		if(curr[pid] != dst[pid]){ //thread i need to be migrated form core_curr[i] to core_dst[i]
+			cpuid      = curr[pid];
+			currentCPU = osSim->id2GProcessor(cpuid);
+			proc       = ProcessId::getProcessId(pid);
+			osSim->cpus.switchOut(cpuid, proc); //switch out proc
 		
 		}
 	
 	}
+	for(int pid = 1; pid < xu_nThread ; pid++){  //switch in
+		if(curr[pid] != dst[pid]){      //thread i need to be migrated form core_curr[i] to core_dst[i]
+			curr[pid] = dst[pid];   // update thread->cpu
+			cpuid = curr[pid];
+			currentCPU = osSim->id2GProcessor(cpuid);
+			proc       = ProcessId::getProcessId(pid);
+			osSim->cpus.switchIn(curr[pid],proc);
+			arc_sigma[cpuid] = pid;  // update cpu -> thread
+		
+		}
 
+	}
 }
-
-
-
-
-
-
-
 

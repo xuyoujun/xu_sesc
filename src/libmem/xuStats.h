@@ -7,6 +7,7 @@
 #define  XUSTATS_H
 
 #define xu_nCPU     9
+#define xu_nThread  xu_nCPU
 #define current_ID  0
 //#define temp_ID     1
 #define max_ID      1
@@ -47,16 +48,23 @@ private:
 	struct statsData *preData;
 	struct statsData *thisData;
 	long long  phase_Z[4];
-	long long control_table[xu_nCPU][max_ID + 1];
+	long long  control_table[xu_nCPU][max_ID + 1];
 	long long  phase_table[xu_nCPU][xu_nPhase][4];
-	double     phase_pw[xu_nCPU][xu_nPhase][xu_nCPU];
+	double     phase_pw[xu_nThread][xu_nPhase][xu_nCPU];
 	long long  interval;
 	double     ITV_diff;
-	int sigma_curr[xu_nCPU];  //thread -> cpu
-	int sigma_dst[xu_nCPU];  //thread -> cpu
+	int sigma_curr[xu_nThread];  //thread -> cpu
+	int sigma_dst[xu_nThread];  //thread -> cpu
         int arc_sigma[xu_nCPU]; //cpu->thread
 	bool is_Migrate(int *curr, int *dst);
 	void doMigrate(int *curr, int *dst);
+	void swap(int * a, int *b){
+		int temp;
+		temp = *a;
+		*a = *b;
+		*b = temp;
+	}
+	void dfs(double **matrix, int *dst,int *A,double &max,int start, int end);
 
 public:
 	xuStats(char *fileName,char *totFileName,int nCPUs);
