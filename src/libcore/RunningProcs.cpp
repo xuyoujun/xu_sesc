@@ -93,10 +93,15 @@ void RunningProcs::workingListAdd(GProcessor *core)
 void RunningProcs::run()
 {
 /***************start*******************************************************************************************************/
-  long long *sumInsts = (long long int *)malloc(sizeof(long long) * SescConf->getRecordSize("","cpucore"));  //add by xu
-  memset(sumInsts,0,sizeof(long long) * SescConf->getRecordSize("","cpucore"));  //add by xu
-  int   *count        = (int *)malloc(sizeof(int)* SescConf->getRecordSize("","cpucore"));  //add by xu
-  memset(count,0,sizeof(int) * SescConf->getRecordSize("","cpucore"));  //add by xu
+//	printf(" SescConf->getRecordSize = %d\n",SescConf->getRecordSize("","cpucore"));
+
+  int nCPUs =  SescConf->getRecordSize("","cpucore");
+  long long sumInsts[nCPUs];  //add by xu
+  memset(sumInsts,0,sizeof(long long) * nCPUs);  //add by xu
+
+  int   count[nCPUs];
+  memset(count,0,sizeof(int) * nCPUs);  //add by xu
+
   xuStats  *xuStat = osSim->xuGetStats();
   bool migrated[9] = {false,false,false,false,false,false,false,false,false};
   int currCpuId = 0;
@@ -131,13 +136,14 @@ void RunningProcs::run()
 		
 //	//*****************************************************start*********************************************** add by xu/
 	currCpuId = currentCPU->getId();
-//	currPId = currentCPU->findVictimPid();
+	currPId   = currentCPU->findVictimPid();
 
 //	ProcessId *proc = ProcessId::getProcessId(currPId);
          
 	//if(proc->getNGradInsts() < ntotal){
 //	if(sumInsts[currCpuId] < ntotal){
 		sumInsts[currCpuId] += currentCPU->getAndClearnGradInsts(currPId);
+
 		if(sumInsts[currCpuId]/interval  > count[currCpuId]){
 			count[currCpuId] ++;
 			xuStat->getStatData(currentCPU);
@@ -203,7 +209,7 @@ void RunningProcs::run()
 
 /***start*********************************************************************************************************************/	   
 	    currCpuId = currentCPU->getId();                                                                 //add by xu
-//	    currPId = currentCPU->findVictimPid();
+	    currPId = currentCPU->findVictimPid();
 //	    ProcessId *proc = ProcessId::getProcessId(currPId);
 	    //if(sumInsts[currCpuId] < ntotal){
 	    	sumInsts[currCpuId] += currentCPU->getAndClearnGradInsts(currPId);
@@ -240,10 +246,10 @@ void RunningProcs::run()
     }
   }while(!EventScheduler::empty());
  /**************************************************************************************************************************/  
-  int nCpus = size();                           //add by xu
-  for(int i = 0; i < nCpus; i++){
-//      xuStat->getTotStats(getProcessor(i));
-  } 
+ // int nCpus = size();                           //add by xu
+ // for(int i = 0; i < nCpus; i++){
+//     xuStat->getTotStats(getProcessor(i));
+  //} 
   /***********************************************************************************************************************/
 }
 

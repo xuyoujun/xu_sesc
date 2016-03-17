@@ -911,7 +911,7 @@ void OSSim::initBoot()
   // Launch the boot flow
   // -1 is the parent pid
   // 0 is the current thread, and it has no flags
-	printf("xu ************* test ProcessID\n");
+//	printf("xu ************* test ProcessID\n");
   eventSpawn(-1,0,0);
 #endif
 

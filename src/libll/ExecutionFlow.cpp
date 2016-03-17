@@ -249,7 +249,7 @@ void ExecutionFlow::switchIn(int32_t i)
 {
 #if (defined MIPS_EMUL)
 
-	printf("Xu***************MIPS_EMUL\n")
+//	printf("Xu***************MIPS_EMUL\n")
   I(!context);
   context=ThreadContext::getContext(i);
 #if (defined DEBUG_SIGNALS)
@@ -257,7 +257,7 @@ void ExecutionFlow::switchIn(int32_t i)
 #endif
   I(context->getPid()==i);
 #else
-	printf("Xu***************NO MIPS_EMUL\n")
+//	printf("Xu***************NO MIPS_EMUL\n")
   I(thread.getPid() == -1);
   I(thread.getPicode()==&invalidIcode);
   loadThreadContext(i);
