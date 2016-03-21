@@ -84,6 +84,10 @@ private:
 	void dfs(double **matrix, int *dst,int *A,double &max,int start, int end);
         void outputDataThread(int cpuId);
 	void saveDataContext(int cpuId);
+	bool solveThisData(GProcessor *core);
+	int phaseClassify(int cpuId);
+	void solveMigrate(int threadId);
+	void recoverData(int cpuId);
 public:
 	xuStats(char *fileName,char *totFileName,int nCPUs);
 	void getStatData(GProcessor *core);

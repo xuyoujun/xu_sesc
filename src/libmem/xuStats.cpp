@@ -57,7 +57,7 @@ xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
 	    sigma_curr[i] = i;
 	    is_Done[i] = false;
 	    is_Free[i] = false;
-    	    pre[i] = false;
+    	    pre[i]     = false;
     }
 
     for(int i = 0; i < xu_nThread; i++){
@@ -72,8 +72,8 @@ xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
      memset(&phase_Z[0][0],0,xu_nThread * 4 * sizeof(long long));
      memset(&statInst[0],0,xu_nThread * sizeof(long long));
 
-     interval   = 100000;
      totalNInst = 100000000;
+     interval   = 100000;
      ITV_diff   = 0.050;
      nBegin     = 0;
 }
@@ -140,20 +140,10 @@ void xuStats::getStatData(GProcessor *core){
     thisData[cpuId].energy = coreEnergy;
 }
 
-
-void xuStats::inputToFile(GProcessor *core){
+bool xuStats::solveThisData(GProcessor *core){
     int cpuId    = core->getId();
     int threadId = arc_sigma[cpuId];
 
-//    for(int i = 0 ; i < 9; i++)
-//	    printf("cpuid = %d threadid = %d\n",i, arc_sigma[i]);
-
-
-    fp = fopen(fileName,"a+");
-    if(NULL == fp){
-    	printf("Can't open file : %s\n",fileName);
-	exit(-1);
-    }
     //performance event
     long long diffdl1miss     = thisData[cpuId].dl1miss - preData[cpuId].dl1miss;
     long long diffil1miss     = thisData[cpuId].il1miss - preData[cpuId].il1miss;
@@ -185,22 +175,22 @@ void xuStats::inputToFile(GProcessor *core){
     long long diffPortConflictStall = thisData[cpuId].nStall[PortConflictStall] - preData[cpuId].nStall[PortConflictStall]; 
     long long diffSwitchStall       = thisData[cpuId].nStall[SwitchStall]       - preData[cpuId].nStall[SwitchStall]; 
     long long diffStall             = diffWinStall + diffROBStall + diffREGStall + diffLoadStall + diffStoreStall + diffBranchStall + diffPortConflictStall + diffSwitchStall;
-
     //print to result file
     fprintf(fp,"%d %lf %lf %lf %lf %lf %lf ",cpuId,(double)diffdl1miss/(double)interval,(double)diffil1miss/(double)interval,(double)diffl2miss/(double)interval,(double)diffdl1hit/(double)interval,(double)diffil1hit/(double)interval,(double)diffl2hit/(double)interval);
     
     fprintf(fp," %lf %lf %lf %lf %lf %lf ",(double)diffitlb/(double)interval,(double)diffdtlb/(double)interval,(double)diffStall/(double)interval,(double)diffNBranchHit/(double)interval,(double)diffNBranchMiss/(double)interval,(double)diffNBranchMiss/(double)(diffNBranchHit + diffNBranchMiss));
 
     fprintf(fp," %lld %lf %lf %lf %lf %lf %lf ",diffclock,diffIPC,L1MissRate,L2MissRate,diffenergy,diffpower,diffIPC/diffpower);
-   
-  statInst[threadId] += diffinst;
-      
-    if(false && statInst[threadId] > totalNInst){
-         getTotStats(core); 
-    }
+  
+    statInst[threadId] = statInst[threadId] + diffinst;
 
+   return statInst[threadId] > totalNInst;
+}
 
-    //instruction   and  phase 
+int xuStats::phaseClassify(int cpuId){
+
+    int       threadId   = arc_sigma[cpuId];
+
     long long diffiALU   = thisData[cpuId].nInst[iALU]   - preData[cpuId].nInst[iALU]; 
     long long diffiMult  = thisData[cpuId].nInst[iMult]  - preData[cpuId].nInst[iMult];  
     long long diffiDiv   = thisData[cpuId].nInst[iDiv]   - preData[cpuId].nInst[iDiv]; 
@@ -224,88 +214,100 @@ void xuStats::inputToFile(GProcessor *core){
     int       currentid = control_table[threadId][current_ID];
    
    
-   
-if( !is_Done[threadId] ){  //threadId must be in a core.
+if(  !is_Done[threadId] ){  //threadId must be in a core.
 
-    if(0 == tempid){ // for the first phase
-	if(pre[threadId] == false ){
-		phase_Z[threadId][0] = INT;
-		phase_Z[threadId][1] = BJ;
-		phase_Z[threadId][2] = FP;
-		phase_Z[threadId][3] = MEM;
-		pre[threadId] = true;
-	}
-	else{
-		diffINT = abs(phase_Z[threadId][0] - INT); 
-		diffBJ  = abs(phase_Z[threadId][1] - BJ); 
-		diffFP  = abs(phase_Z[threadId][2] - FP);
-		diffMEM = abs(phase_Z[threadId][3] - MEM);
-		delt = (double)(diffINT + diffBJ + diffFP + diffMEM)/(double)interval;
-		if(delt > ITV_diff){
-			control_table[threadId][temp_NUM] = 0;
+	    if(0 == tempid){ // for the first phase
+		if(pre[threadId] == false ){
 			phase_Z[threadId][0] = INT;
 			phase_Z[threadId][1] = BJ;
 			phase_Z[threadId][2] = FP;
 			phase_Z[threadId][3] = MEM;
+			pre[threadId] = true;
 		}
-		else {
-			if (++control_table[threadId][temp_NUM] >= 4){	
-			        nBegin ++;	
+		else{
+			diffINT = abs(phase_Z[threadId][0] - INT); 
+			diffBJ  = abs(phase_Z[threadId][1] - BJ); 
+			diffFP  = abs(phase_Z[threadId][2] - FP);
+			diffMEM = abs(phase_Z[threadId][3] - MEM);
+			delt = (double)(diffINT + diffBJ + diffFP + diffMEM)/(double)interval;
+			if(delt > ITV_diff){
 				control_table[threadId][temp_NUM] = 0;
-				control_table[threadId][max_ID] = tempid;
-				control_table[threadId][current_ID] = tempid;
-				phase_table[threadId][tempid][0] = phase_Z[threadId][0];
-				phase_table[threadId][tempid][1] = phase_Z[threadId][1];
-				phase_table[threadId][tempid][2] = phase_Z[threadId][2];
-				phase_table[threadId][tempid][3] = phase_Z[threadId][3];
+				phase_Z[threadId][0] = INT;
+				phase_Z[threadId][1] = BJ;
+				phase_Z[threadId][2] = FP;
+				phase_Z[threadId][3] = MEM;
 			}
-		}
-	}
-    }
-    else{ //other phase
-		diffINT = abs(phase_table[threadId][currentid][0] - INT); 
-		diffBJ  = abs(phase_table[threadId][currentid][1] - BJ); 
-		diffFP  = abs(phase_table[threadId][currentid][2] - FP); 
-		diffMEM = abs(phase_table[threadId][currentid][3] - MEM); 
-		delt = (double)(diffINT + diffBJ + diffFP + diffMEM)/(double)interval;
-	if( delt >  ITV_diff){                               //may be a new phase  // may a previous phase
-		if(++control_table[threadId][temp_NUM] >= 4){// is another phase
-			control_table[threadId][temp_NUM] = 0;
-			for(int i = 0; i <= control_table[threadId][max_ID]; i++){ //Is previous phase?
-				diffINT = abs(phase_table[threadId][i][0] - INT); 
-				diffBJ  = abs(phase_table[threadId][i][1] - BJ); 
-				diffFP  = abs(phase_table[threadId][i][2] - FP); 
-				diffMEM = abs(phase_table[threadId][i][3] - MEM); 
-				delt = (double)(diffINT + diffBJ + diffFP + diffMEM)/(double)interval;
-
-				if(delt <= ITV_diff ){  //a previous phase.
-					control_table[threadId][max_ID]--;  //in order to ++
-					tempid = i;
-					break;
+			else {
+				if (++control_table[threadId][temp_NUM] >= 4){	
+				        nBegin ++;	
+					control_table[threadId][temp_NUM] = 0;
+					control_table[threadId][max_ID] = tempid;
+					control_table[threadId][current_ID] = tempid;
+					phase_table[threadId][tempid][0] = phase_Z[threadId][0];
+					phase_table[threadId][tempid][1] = phase_Z[threadId][1];
+					phase_table[threadId][tempid][2] = phase_Z[threadId][2];
+					phase_table[threadId][tempid][3] = phase_Z[threadId][3];
 				}
 			}
-			control_table[threadId][max_ID]++;
-			control_table[threadId][current_ID] = tempid; //update current_ID
-			phase_table[threadId][tempid][0] = INT;
-			phase_table[threadId][tempid][1] = BJ;
-			phase_table[threadId][tempid][2] = FP;
-			phase_table[threadId][tempid][3] = MEM;
 		}
-	}
-	else{ //is current
-		control_table[threadId][temp_NUM] = 0;
-	}
-    }
-
-}//end   if( !is_Done[threadId])
+	    }
+	    else{ //other phase
+			diffINT = abs(phase_table[threadId][currentid][0] - INT); 
+			diffBJ  = abs(phase_table[threadId][currentid][1] - BJ); 
+			diffFP  = abs(phase_table[threadId][currentid][2] - FP); 
+			diffMEM = abs(phase_table[threadId][currentid][3] - MEM); 
+			delt = (double)(diffINT + diffBJ + diffFP + diffMEM)/(double)interval;
+		if( delt >  ITV_diff){                               //may be a new phase  // may a previous phase
+			if(++control_table[threadId][temp_NUM] >= 4){// is another phase
+				control_table[threadId][temp_NUM] = 0;
+				for(int i = 0; i <= control_table[threadId][max_ID]; i++){ //Is previous phase?
+					diffINT = abs(phase_table[threadId][i][0] - INT); 
+					diffBJ  = abs(phase_table[threadId][i][1] - BJ); 
+					diffFP  = abs(phase_table[threadId][i][2] - FP); 
+					diffMEM = abs(phase_table[threadId][i][3] - MEM); 
+					delt = (double)(diffINT + diffBJ + diffFP + diffMEM)/(double)interval;
+	
+					if(delt <= ITV_diff ){  //a previous phase.
+						control_table[threadId][max_ID]--;  //in order to ++
+						tempid = i;
+						break;
+					}
+				}
+				control_table[threadId][max_ID]++;
+				control_table[threadId][current_ID] = tempid; //update current_ID
+				phase_table[threadId][tempid][0] = INT;
+				phase_table[threadId][tempid][1] = BJ;
+				phase_table[threadId][tempid][2] = FP;
+				phase_table[threadId][tempid][3] = MEM;
+			}
+		}
+		else{ //is current
+			control_table[threadId][temp_NUM] = 0;
+		}
+	    }
+	
+	}//end   if( !is_Done[threadId])
 
        fprintf(fp,"    %lf %lf %lf %lf %lld\n",(double)INT/(double)interval,(double)BJ/(double)interval,(double)FP/(double)interval,(double)MEM/(double)interval,control_table[threadId][current_ID]);
+	return currentid;
+//
+}
 
 
-    if( false && currentid != control_table[threadId][current_ID]){ //thread's phase is changed ,may need migrate
-	    
+void xuStats::solveMigrate(int threadId){
+	int cpuId   = sigma_curr[threadId];
+	int tempid  = control_table[threadId][current_ID];
+	double  INT = phase_table[threadId][tempid][0];
+	double  BJ  = phase_table[threadId][tempid][1];
+	double  FP  = phase_table[threadId][tempid][2];
+	double  MEM = phase_table[threadId][tempid][3];
 	
-    	double C = diffIPC;
+	long long diffclock       = thisData[cpuId].clock - preData[cpuId].clock;
+        long long diffinst        = thisData[cpuId].sumInst - preData[cpuId].sumInst;
+        double    diffIPC         = (double)diffinst / (double)diffclock;
+
+        long long diffNBranchMiss = thisData[cpuId].nbranchMiss - preData[cpuId].nbranchMiss;
+	double C = diffIPC;
 	double T = (double)INT/(double)interval;
 	double B = (double)diffNBranchMiss/(double)interval;
 	double M = (double)MEM/(double)interval;
@@ -328,10 +330,11 @@ if( !is_Done[threadId] ){  //threadId must be in a core.
 	        printf("migrate happened\n");
        		doMigrate(sigma_curr,sigma_dst);
        }	
-    
-    } 
-    
-    //save to the previous result
+} 
+
+
+void xuStats::recoverData(int cpuId){
+
     preData[cpuId].dl1miss     =  thisData[cpuId].dl1miss;
     preData[cpuId].il1miss     =  thisData[cpuId].il1miss;
     preData[cpuId].l2miss      =  thisData[cpuId].l2miss;
@@ -353,7 +356,33 @@ if( !is_Done[threadId] ){  //threadId must be in a core.
     for(int i = NoStall + 1; i < MaxStall; i++){
 	preData[cpuId].nStall[i] = thisData[cpuId].nStall[i];
     } 
-    fclose(fp);
+}
+
+
+void xuStats::inputToFile(GProcessor *core){
+    int cpuId    = core->getId();
+    int threadId = arc_sigma[cpuId];
+    int currentid;
+    bool is_Killed = false;
+    if( !is_Done[threadId] && !is_Free[cpuId]){
+	    fp = fopen(fileName,"a+");
+	    if(NULL == fp){
+	    	printf("Can't open file : %s\n",fileName);
+		exit(-1);
+	    }
+	    is_Killed = solveThisData(core);
+	    if(is_Killed){
+	    	getTotStats(core);
+	    
+	    }
+	    else{
+	    	currentid = phaseClassify(cpuId);
+	    	if(currentid !=  control_table[threadId][current_ID])
+	    		solveMigrate(threadId);
+	    	recoverData(cpuId); 
+	   }
+	    fclose(fp);
+    }
 }
 
 
@@ -542,9 +571,6 @@ void xuStats::outputDataThread(int cpuId){
 	fclose(totFp);
 
 }
-
-
-
 
 
 void xuStats::saveDataContext(int cpuId){
