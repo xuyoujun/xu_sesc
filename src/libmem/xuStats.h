@@ -72,7 +72,7 @@ private:
 	bool is_Done[xu_nThread];
 	bool is_Free[xu_nCPU];
         int nBegin;
-
+	int nMigrate;
 	bool is_Migrate(int *curr, int *dst);
 	void doMigrate(int *curr, int *dst);
 	void swap(int * a, int *b){

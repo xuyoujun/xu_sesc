@@ -75,6 +75,7 @@ xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
      totalNInst = 100000000;
      interval   = 100000;
      ITV_diff   = 0.050;
+     nMigrate   = 0;
      nBegin     = 0;
 }
 
@@ -503,6 +504,7 @@ void xuStats::doMigrate(int *curr, int *dst){     //migrate threads from curr to
 
 	int        cpuId;
 	ProcessId  *proc;
+	nMigrate++;
 	
 	for(int pid = 1; pid < xu_nThread; pid++){  //switch out
 		if(curr[pid] != dst[pid] && !is_Done[pid]){ //thread i need to be migrated form core_curr[i] to core_dst[i]
@@ -567,7 +569,8 @@ void xuStats::outputDataThread(int cpuId){
 	fprintf(totFp,"%lf ",IPC -context[cpuId].IPC);
 	fprintf(totFp,"%lf ",corePower -context[cpuId].power);
 	fprintf(totFp,"%lf ",coreEnergy - context[cpuId].energy);
-	fprintf(totFp,"%lf \n",IPC/corePower -context[cpuId].pw);
+	fprintf(totFp,"%lf ",IPC/corePower -context[cpuId].pw);
+	fprintf(totFp,"%d  \n",nMigrate);
 	fclose(totFp);
 
 }
