@@ -436,7 +436,8 @@ void xuStats::getTotStats(GProcessor *core){
 	   fprintf(totFp,"%lf ",IPC -context[cpuId].IPC);
 	   fprintf(totFp,"%lf ",corePower -context[cpuId].power);
 	   fprintf(totFp,"%lf ",coreEnergy - context[cpuId].energy);
-	   fprintf(totFp,"%lf \n",IPC/corePower -context[cpuId].pw);
+	   fprintf(totFp,"%lf ",IPC/corePower -context[cpuId].pw);
+	   fprintf(totFp,"%d \n",0);
 	  // fprintf(totFp,"%lf %lf %lf %lf\n",corePower,coreEnergy,IPC/corePower);
 		
 	   context[cpuId] = currContext;
