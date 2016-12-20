@@ -71,6 +71,20 @@ xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
      memset(&phase_pw[0][0][0],0,xu_nThread * xu_nPhase * xu_nCPU * sizeof(double));
      memset(&phase_Z[0][0],0,xu_nThread * 4 * sizeof(long long));
      memset(&statInst[0],0,xu_nThread * sizeof(long long));
+     
+     FILE *tempfd = fopen("combina_input.txt","r");
+     for(int i = 1; i < xu_nThread; i++){
+        int nPhase;
+     	fscanf(tempfd,"%d",&nPhase);
+	for(int j = 0; j < nPhase; j++){
+		for(int k = 1; k < xu_nCPU; k++){
+			fscanf(tempfd,"%lf",&phase_pw[i][j][k]);
+		
+		}
+	}
+     
+     }
+     fclose(tempfd);
 
      totalNInst = 100000000;
      interval   = 100000;
@@ -314,19 +328,19 @@ void xuStats::solveMigrate(int threadId){
 	double M = (double)MEM/(double)interval;
 	double S;
 	double L;
-	if(cpuId < 5){   //S core
-		 S = 0.0407 + 0.1227*C - 0.0013 * T + 0.0110 * B - 0.0371 *M; //SS
-		 L = 0.0631 + 0.0162*C + 0.0021 * T - 0.1284 * B - 0.0394 *M;  //SL
-	}
-	else{  //  Lcore
-	
-		 L = 0.0623 + 0.0040 * C - 0.0025 * T - 0.0905 * B - 0.0363 *M;  //LL
-		 S = 0.0677 + 0.0012 * C - 0.0110 * T + 0.0028 * B - 0.0434 *M;  //LS
-	}
-        for(int i = 1; i <= 4; i++){
-		phase_pw[threadId][tempid][i] = S;
-		phase_pw[threadId][tempid][i + 4] = L;
-	}
+//	if(cpuId < 5){   //S core
+//		 S = 0.0407 + 0.1227*C - 0.0013 * T + 0.0110 * B - 0.0371 *M; //SS
+//		 L = 0.0631 + 0.0162*C + 0.0021 * T - 0.1284 * B - 0.0394 *M;  //SL
+//	}
+//	else{  //  Lcore
+//	
+//		 L = 0.0623 + 0.0040 * C - 0.0025 * T - 0.0905 * B - 0.0363 *M;  //LL
+//		 S = 0.0677 + 0.0012 * C - 0.0110 * T + 0.0028 * B - 0.0434 *M;  //LS
+//	}
+//        for(int i = 1; i <= 4; i++){
+//		phase_pw[threadId][tempid][i] = S;
+//		phase_pw[threadId][tempid][i + 4] = L;
+//	}
        if(nBegin >= 8 && true == is_Migrate(sigma_curr,sigma_dst)){
 	        printf("migrate happened\n");
        		doMigrate(sigma_curr,sigma_dst);
@@ -374,6 +388,7 @@ void xuStats::inputToFile(GProcessor *core){
 	    is_Killed = solveThisData(core);
 	    if(is_Killed){
 	    	getTotStats(core);
+	    	currentid = phaseClassify(cpuId);
 	    
 	    }
 	    else{
