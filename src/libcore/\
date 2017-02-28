@@ -15,7 +15,24 @@ xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
     preData  = new statsData[nCPUs];
     thisData = new statsData[nCPUs];
     for(int i = 0; i < nCPUs; i++){
+       preData[i].dl1miss    = 0;
+       preData[i].il1miss    = 0;
+       preData[i].l2miss     = 0;
+       preData[i].dl1hit     = 0;
+       preData[i].il1hit     = 0;
+       preData[i].l2hit      = 0;
+       preData[i].itlb   = 0;
+       preData[i].dtlb   = 0;
+       preData[i].nbranche = 0;
+       preData[i].nbranchMiss = 0;
+       preData[i].nbranchHit = 0;
+       preData[i].energy = 0.0;
+       preData[i].clock  = 0;
        memset(preData[i].nInst,0,MaxInstType * sizeof(long long));
+       memset(preData[i].nStall,0,MaxStall * sizeof(long long));
+       preData[i].sumInst = 0;
+       preData[i].IPC = 0.0;
+       preData[i].energyEffiency = 0.0;
     }
     for(int i = 0; i < xu_nCPU; i++){
     	for( int j = 0; j < control_NUM; j++){
@@ -32,6 +49,12 @@ xuStats::xuStats(char *fileName,char *totFileName,int nCPUs){
 
 void xuStats::getStatData(GProcessor *proc){
     int cpuId = proc->getId();
+   // GMemorySystem *gm  = proc->getMemorySystem();
+   // MemObj *dataSource = gm->getDataSource();  //dl1
+   // MemObj *instSource = gm->getInstrSource(); //il1
+   // MemObj *l2Cache    = (*(instSource->getLowerLevel())).front();
+   // BPredictor *bpred  = proc->xuGetBPred();
+
    // get instructions    
     GStatsCntr **ppnInst = proc->xuGetNInst(); 
     thisData[cpuId].sumInst = 0;
