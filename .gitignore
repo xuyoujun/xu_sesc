@@ -1,2 +1,9 @@
 *.o
 *.a
+*.suo
+src/sesc.sdf
+*.sln
+src/sesc.VC.opendb
+*.vcxproj
+src/sesc.vcxproj.filters
+*.user
