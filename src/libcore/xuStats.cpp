@@ -378,8 +378,8 @@ void xuStats::inputToFile(GProcessor *core){
 	    }
 	    else{
 	    	currentid = phaseClassify(cpuId);
-//	    	if(currentid !=  control_table[threadId][current_ID])
-//	    		solveMigrate(threadId);
+	    	if(currentid !=  control_table[threadId][current_ID])
+	    		solveMigrate(threadId);
 	    	recoverData(cpuId); 
 	   }
 	    fclose(fp);
