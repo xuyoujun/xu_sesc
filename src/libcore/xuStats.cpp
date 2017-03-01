@@ -15,7 +15,13 @@ xuStats::xuStats(char *fileName, char *totFileName, int nCPUs) {
 	preData = new statsData[nCPUs];
 	thisData = new statsData[nCPUs];
 	for (int i = 0; i < nCPUs; i++) {
+		preData[i].energy = 0.0;
+		preData[i].clock = 0;
 		memset(preData[i].nInst, 0, MaxInstType * sizeof(long long));
+		//memset(preData[i].nStall, 0, MaxStall * sizeof(long long));
+		preData[i].sumInst = 0;
+		preData[i].IPC = 0.0;
+		//preData[i].energyEffiency = 0.0;
 	}
 	for (int i = 0; i < xu_nCPU; i++) {
 		for (int j = 0; j < control_NUM; j++) {
@@ -41,6 +47,18 @@ void xuStats::getStatData(GProcessor *proc) {
 		thisData[cpuId].nInst[i] = temp;
 		thisData[cpuId].sumInst += temp; ///the number of instruction for IPC
 	}
+	thisData[cpuId].clock = proc->getClockTicks(); //clock
+
+	const char * coreName = SescConf->getCharPtr("", "cpucore", cpuId);
+	double pPower = EnergyMgr::etop(GStatsEnergy::getTotalProc(cpuId));
+	double maxClockEnergy = EnergyMgr::get(coreName, "clockEnergy", cpuId);
+	double maxEnergy = EnergyMgr::get(coreName, "totEnergy");
+	// More reasonable clock energy. 50% is based on activity, 50% of the clock
+	// distributtion is there all the time
+	double clockPower = 0.5 * (maxClockEnergy / maxEnergy) * pPower + 0.5 * maxClockEnergy;
+	double corePower = pPower + clockPower;
+	double coreEnergy = EnergyMgr::ptoe(corePower);
+	thisData[cpuId].energy = coreEnergy;
 }
 
 
@@ -66,6 +84,13 @@ void xuStats::inputToFile(GProcessor *proc) {
 	long long BJ = diffiBJ;
 	long long FP = difffpALU + difffpMult;// +difffpDiv;
 	long long MEM = diffiStore + diffiLoad;
+
+	long long diffclock = thisData[cpuId].clock - preData[cpuId].clock;
+	//long long diffinst = thisData[cpuId].sumInst - preData[cpuId].sumInst;
+	double    diffIPC = (double)interval / (double)diffclock;
+	double    diffenergy = thisData[cpuId].energy - preData[cpuId].energy;
+	double diffpower = diffenergy / diffclock*(osSim->getFrequency() / 1e9);
+
 
 	long long diffINT;
 	long long diffBJ;
@@ -147,12 +172,16 @@ void xuStats::inputToFile(GProcessor *proc) {
 			control_table[cpuId][temp_NUM] = 0;
 		}
 	}
-	fprintf(fp, "%d %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld\n", cpuId, interval, diffiALU, diffiMult, diffiDiv, diffiBJ, diffiLoad, diffiStore, difffpALU, difffpMult, difffpDiv, INT, BJ, FP, MEM, control_table[cpuId][max_ID], control_table[cpuId][temp_NUM], control_table[cpuId][current_ID]);
+	fprintf(fp, "%d %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lf %lld %lld %lld\n", cpuId, interval, diffiALU, diffiMult, diffiDiv, diffiBJ, diffiLoad, diffiStore, difffpALU, difffpMult, difffpDiv, INT, BJ, FP, MEM,diffIPC/diffpower, control_table[cpuId][max_ID], control_table[cpuId][temp_NUM], control_table[cpuId][current_ID]);
 
 	//save to the previous result
 	for (int i = iOpInvalid; i < MaxInstType; i++) {
 		preData[cpuId].nInst[i] = thisData[cpuId].nInst[i];
 	}
+	preData[cpuId].clock = thisData[cpuId].clock;
+	preData[cpuId].sumInst = thisData[cpuId].sumInst;
+	preData[cpuId].energy = thisData[cpuId].energy
+
 	fclose(fp);
 }
 void xuStats::getTotStats(GProcessor *proc) {
