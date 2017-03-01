@@ -75,7 +75,6 @@ void xuStats::inputToFile(GProcessor *proc) {
 	int tempid = control_table[cpuId][max_ID] + 1;
 	int currentid = control_table[cpuId][current_ID];
 
-	fprintf(fp, "%d %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld\n", cpuId, interval, diffiALU, diffiMult, diffiDiv, diffiBJ, diffiLoad, diffiStore, difffpALU, difffpMult, difffpDiv, INT, BJ, FP, MEM);
 
 	if (0 == tempid) { // for the first phase
 		if (pre == false) {
@@ -148,7 +147,7 @@ void xuStats::inputToFile(GProcessor *proc) {
 			control_table[cpuId][temp_NUM] = 0;
 		}
 	}
-
+	fprintf(fp, "%d %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld\n", cpuId, interval, diffiALU, diffiMult, diffiDiv, diffiBJ, diffiLoad, diffiStore, difffpALU, difffpMult, difffpDiv, INT, BJ, FP, MEM, control_table[cpuId][max_ID], control_table[cpuId][temp_NUM], control_table[cpuId][current_ID]);
 
 	//save to the previous result
 	for (int i = iOpInvalid; i < MaxInstType; i++) {
