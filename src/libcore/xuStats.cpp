@@ -180,7 +180,7 @@ void xuStats::inputToFile(GProcessor *proc) {
 	}
 	preData[cpuId].clock = thisData[cpuId].clock;
 	preData[cpuId].sumInst = thisData[cpuId].sumInst;
-	preData[cpuId].energy = thisData[cpuId].energy
+	preData[cpuId].energy = thisData[cpuId].energy;
 
 	fclose(fp);
 }
