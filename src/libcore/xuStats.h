@@ -55,6 +55,9 @@ public:
 	void getStatData(GProcessor *proc);
 	void inputToFile(GProcessor *proc);
 	void getTotStats(GProcessor *proc);
+	long long  get_interval() {
+		return interval;
+	};
 };
 
 #endif
