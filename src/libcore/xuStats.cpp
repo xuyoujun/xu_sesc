@@ -34,7 +34,8 @@ xuStats::xuStats(char *fileName, char *totFileName, int nCPUs) {
 	memset(&phase_Z[0], 0, 4 * sizeof(long long));
 	interval = 100000;
 	//在分支2.2.3上主要调节找个参数
-	ITV_diff = 0.050;
+	ITV_diff = 0.10;
+	temp_num = 4;
 }
 
 void xuStats::getStatData(GProcessor *proc) {
@@ -123,7 +124,7 @@ void xuStats::inputToFile(GProcessor *proc) {
 				phase_Z[3] = MEM;
 			}
 			else {
-				if (++control_table[cpuId][temp_NUM] >= 4) {
+				if (++control_table[cpuId][temp_NUM] >= temp_num) {
 					control_table[cpuId][temp_NUM] = 0;
 					control_table[cpuId][max_ID] = tempid;
 					control_table[cpuId][current_ID] = tempid;
@@ -143,7 +144,7 @@ void xuStats::inputToFile(GProcessor *proc) {
 		delt = (double)(diffINT + diffBJ + diffFP + diffMEM) / (double)interval;
 		//	printf("%lf\n", delt);
 		if (delt > ITV_diff) { //may be a new phase  // may a previous phase
-			if (++control_table[cpuId][temp_NUM] >= 4) {// is another phase
+			if (++control_table[cpuId][temp_NUM] >= temp_num) {// is another phase
 				control_table[cpuId][temp_NUM] = 0;
 				for (int i = 0; i <= control_table[cpuId][max_ID]; i++) { //Is previous phase?
 					diffINT = abs(phase_table[cpuId][i][0] - INT);
