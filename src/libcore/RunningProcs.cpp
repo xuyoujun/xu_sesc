@@ -102,7 +102,7 @@ void RunningProcs::run()
   int currCpuId = 0;
   int currPId  = 0;
 
-  long long interval = 100000;
+  long long interval = xuStat->interval;
   double delta = 0.05;
  /***********************************************************************************************************************/
   I(cpuVector.size() > 0 );
