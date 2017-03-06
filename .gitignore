@@ -1,2 +1,10 @@
 *.o
 *.a
+*.depend
+run/obj/Linux_obj/.depend.
+*.suo
+src/sesc.sdf
+*.sln
+src/sesc.vcxproj
+*.filters
+src/sesc.vcxproj.user
