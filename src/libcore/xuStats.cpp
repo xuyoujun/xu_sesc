@@ -133,10 +133,11 @@ void xuStats::inputToFile(GProcessor *proc){
     double    diffenergy     = thisData[cpuId].energy - preData[cpuId].energy;
     double    diffpower      = diffenergy / diffclock*(osSim->getFrequency()/1e9);
     double    L1MissRate     = (double)(diffdl1miss + diffil1miss)/(double)(diffdl1miss + diffil1miss + diffdl1hit + diffil1hit);
-    double    L2MissRate     = (double)diffl2miss/(double)(diffl2miss + diffl2hit);
+    double    L2MissRate     =  (diffl2miss + diffl2hit) == 0 ? 0: (double)diffl2miss/(double)(diffl2miss + diffl2hit);
     long long diffNBranch    = thisData[cpuId].nbranche - preData[cpuId].nbranche;
     long long diffNBranchMiss= thisData[cpuId].nbranchMiss - preData[cpuId].nbranchMiss;
     long long diffNBranchHit = thisData[cpuId].nbranchHit - preData[cpuId].nbranchHit;
+    double    BranchMissRate = (diffNBranchMiss + diffNBranchHit) == 0 ? 0: (double)(diffNBranchMiss)/(double)(diffNBranchMiss + diffNBranchHit);
   ///Stall 
     long long diffWinStall          = thisData[cpuId].nStall[SmallWinStall]     - preData[cpuId].nStall[SmallWinStall]; 
     long long diffROBStall          = thisData[cpuId].nStall[SmallROBStall]     - preData[cpuId].nStall[SmallROBStall];  
@@ -150,9 +151,9 @@ void xuStats::inputToFile(GProcessor *proc){
     long long diffStall             = diffWinStall + diffROBStall + diffREGStall + diffLoadStall + diffStoreStall + diffBranchStall + diffPortConflictStall + diffSwitchStall;
 
     //print to result file
-    fprintf(fp,"%d %lf %lf %lf %lf %lf %lf ",cpuId,(double)diffdl1miss/(double)interval,(double)diffil1miss/(double)interval,(double)diffl2miss/(double)interval,(double)diffdl1hit/(double)interval,(double)diffil1hit/(double)interval,(double)diffl2hit/(double)interval);
+    fprintf(fp,"%d %lld %lld %lld %lld %lld %lld ",cpuId,diffdl1miss,diffil1miss,diffl2miss,diffdl1hit,diffil1hit,diffl2hit);
     
-    fprintf(fp," %lf %lf %lf %lf %lf %lf ",(double)diffitlb/(double)interval,(double)diffdtlb/(double)interval,(double)diffStall/(double)interval,(double)diffNBranchHit/(double)interval,(double)diffNBranchMiss/(double)interval,(double)diffNBranchMiss/(double)(diffNBranchHit + diffNBranchMiss));
+    fprintf(fp," %lld %lld %lld %lld %lld %lf ",diffitlb,diffdtlb,diffStall,diffNBranchHit,diffNBranchMiss,BranchMissRate);
 
     fprintf(fp," %lld %lf %lf %lf %lf %lf %lf ",diffclock,diffIPC,L1MissRate,L2MissRate,diffenergy,diffpower,diffIPC/diffpower);
     //instruction   and  phase 
@@ -165,9 +166,11 @@ void xuStats::inputToFile(GProcessor *proc){
     long long difffpALU = thisData[cpuId].nInst[fpALU]  - preData[cpuId].nInst[fpALU]; 
     long long difffpMult= thisData[cpuId].nInst[fpMult] - preData[cpuId].nInst[fpMult]; 
     long long difffpDiv = thisData[cpuId].nInst[fpDiv]  - preData[cpuId].nInst[fpDiv]; 
-    long long INT = diffiALU + diffiMult + diffiDiv;
+    long long INT = diffiALU + diffiMult;
+    //long long INT = diffiALU + diffiMult + diffiDiv;
     long long BJ  = diffiBJ;
-    long long FP  = difffpALU + difffpMult + difffpDiv;
+    long long FP  = difffpALU + difffpMult;
+    //long long FP  = difffpALU + difffpMult + difffpDiv;
     long long MEM = diffiStore + diffiLoad;
     long long diffINT;
     long long diffBJ;
@@ -216,7 +219,6 @@ void xuStats::inputToFile(GProcessor *proc){
 		diffFP  = abs(phase_table[cpuId][currentid][2] - FP); 
 		diffMEM = abs(phase_table[cpuId][currentid][3] - MEM); 
 		delt = (double)(diffINT + diffBJ + diffFP + diffMEM)/(double)interval;
-//	printf("%lf\n", delt);
 	if( delt >  ITV_diff){ //may be a new phase  // may a previous phase
 		if(++control_table[cpuId][temp_NUM] >= temp_num){// is another phase
 			control_table[cpuId][temp_NUM] = 0;
@@ -248,8 +250,7 @@ void xuStats::inputToFile(GProcessor *proc){
 	}
     }
      
-       //fprintf(fp,"    %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld\n",diffiALU,diffiMult,diffiDiv,diffiBJ,diffiLoad,diffiStore,difffpALU,difffpMult,difffpDiv,control_table[cpuId][current_ID]);
-       fprintf(fp,"    %lf %lf %lf %lf %lld\n",(double)INT/(double)interval,(double)BJ/(double)interval,(double)FP/(double)interval,(double)MEM/(double)interval,control_table[cpuId][current_ID]);
+    fprintf(fp,"    %lld %lld %lld %lld %lld %lld\n",INT,BJ,FP,MEM,control_table[cpuId][current_ID],diffl2hit);
     
     //save to the previous result
     preData[cpuId].dl1miss    =  thisData[cpuId].dl1miss;
@@ -310,17 +311,6 @@ void xuStats::getTotStats(GProcessor *proc){
       	   fclose(totFp);
        }
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
